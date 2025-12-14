@@ -6,7 +6,7 @@ use op_zisk_client_utils::boot::BootInfoStruct;
 use op_zisk_host_utils::{
     block_range::get_validated_block_range,
     fetcher::OPZisKDataFetcher,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     setup_logger,
     witness_generation::WitnessGenerator,
 };

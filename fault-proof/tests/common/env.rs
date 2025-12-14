@@ -17,20 +17,20 @@ use op_zisk_bindings::{
     anchor_state_registry::AnchorStateRegistry::{self, AnchorStateRegistryInstance},
     dispute_game_factory::DisputeGameFactory::{self, DisputeGameFactoryInstance},
     mock_optimism_portal2::MockOptimismPortal2::{self, MockOptimismPortal2Instance},
-    op_zisk_fault_dispute_game::OPSuccinctFaultDisputeGame::{
-        self, OPSuccinctFaultDisputeGameInstance,
+    op_zisk_fault_dispute_game::OPZisKFaultDisputeGame::{
+        self, OPZisKFaultDisputeGameInstance,
     },
 };
 use op_zisk_host_utils::{
     fetcher::{get_rpcs_from_env, OPZisKDataFetcher, RPCConfig},
-    host::OPSuccinctHost,
-    OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH,
+    host::OPZisKHost,
+    OP_ZISK_FAULT_DISPUTE_GAME_CONFIG_PATH,
 };
 use op_zisk_signer_utils::{Signer, SignerLock};
 use tokio::task::JoinHandle;
 use tracing::{info, Level};
 
-use fault_proof::{config::FaultDisputeGameConfig, proposer::OPSuccinctProposer, L2ProviderTrait};
+use fault_proof::{config::FaultDisputeGameConfig, proposer::OPZisKProposer, L2ProviderTrait};
 use tracing_subscriber::{filter::Targets, fmt, prelude::*, util::SubscriberInitExt};
 
 use crate::common::{
@@ -119,7 +119,7 @@ impl TestEnvironment {
         let test_config: FaultDisputeGameConfig =
             test_config(anvil.starting_l2_block_number, anvil.starting_root.clone());
         let json = serde_json::to_string_pretty(&test_config)?;
-        std::fs::write(OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH.clone(), json)?;
+        std::fs::write(OP_ZISK_FAULT_DISPUTE_GAME_CONFIG_PATH.clone(), json)?;
 
         // Update RPC config with Anvil endpoint
         rpc_config.l1_rpc = Url::parse(&anvil.endpoint.clone())?;
@@ -174,7 +174,7 @@ impl TestEnvironment {
         // Create config with offset starting block
         let test_config = test_config(custom_starting_block, starting_root);
         let json = serde_json::to_string_pretty(&test_config)?;
-        std::fs::write(OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH.clone(), json)?;
+        std::fs::write(OP_ZISK_FAULT_DISPUTE_GAME_CONFIG_PATH.clone(), json)?;
 
         // Update RPC config with Anvil endpoint
         rpc_config.l1_rpc = Url::parse(&anvil.endpoint)?;
@@ -191,7 +191,7 @@ impl TestEnvironment {
 
     pub async fn init_proposer(
         &self,
-    ) -> Result<OPSuccinctProposer<fault_proof::L1Provider, impl OPSuccinctHost + Clone>> {
+    ) -> Result<OPZisKProposer<fault_proof::L1Provider, impl OPZisKHost + Clone>> {
         let proposer = init_proposer(
             &self.rpc_config,
             self.private_keys.proposer,
@@ -342,7 +342,7 @@ impl TestEnvironment {
 
     pub async fn anchor_registry_address(&self, game_address: Address) -> Result<Address> {
         let provider = self.provider_with_role(Role::Proposer)?;
-        let anchor_registry_addr = OPSuccinctFaultDisputeGame::new(game_address, provider)
+        let anchor_registry_addr = OPZisKFaultDisputeGame::new(game_address, provider)
             .anchorStateRegistry()
             .call()
             .await?;
@@ -373,7 +373,7 @@ impl TestEnvironment {
     pub async fn fault_dispute_game(
         &self,
         game_address: Address,
-    ) -> Result<OPSuccinctFaultDisputeGameInstance<impl alloy_provider::Provider + Clone>> {
+    ) -> Result<OPZisKFaultDisputeGameInstance<impl alloy_provider::Provider + Clone>> {
         self.fault_dispute_game_with_role(game_address, Role::Proposer).await
     }
 
@@ -382,9 +382,9 @@ impl TestEnvironment {
         &self,
         game_address: Address,
         role: Role,
-    ) -> Result<OPSuccinctFaultDisputeGameInstance<impl alloy_provider::Provider + Clone>> {
+    ) -> Result<OPZisKFaultDisputeGameInstance<impl alloy_provider::Provider + Clone>> {
         let provider = self.provider_with_role(role)?;
-        let game = OPSuccinctFaultDisputeGame::new(game_address, provider);
+        let game = OPZisKFaultDisputeGame::new(game_address, provider);
         Ok(game)
     }
 
@@ -433,7 +433,7 @@ impl TestEnvironment {
 
     pub async fn get_credit(&self, game_address: Address, recipient: Address) -> Result<U256> {
         let provider = &self.anvil.provider;
-        let game = OPSuccinctFaultDisputeGame::new(game_address, provider);
+        let game = OPZisKFaultDisputeGame::new(game_address, provider);
         let normal_credit = game.normalModeCredit(recipient).call().await?;
         let refund_credit = game.refundModeCredit(recipient).call().await?;
         Ok(normal_credit + refund_credit)

@@ -17,7 +17,7 @@ use op_alloy_rpc_types::Transaction;
 use crate::contract::{
     AnchorStateRegistry, DisputeGameFactory::DisputeGameFactoryInstance, GameStatus, IDisputeGame,
     IFaultDisputeGame, IFaultDisputeGame::IFaultDisputeGameInstance, L2Output,
-    OPSuccinctFaultDisputeGame,
+    OPZisKFaultDisputeGame,
 };
 
 pub type L1Provider = RootProvider;
@@ -144,7 +144,7 @@ where
     /// Fetches the challenger bond required to challenge a game.
     async fn fetch_challenger_bond(&self, game_type: u32) -> Result<U256> {
         let game_impl_address = self.gameImpls(game_type).call().await?;
-        let game_impl = OPSuccinctFaultDisputeGame::new(game_impl_address, self.provider());
+        let game_impl = OPZisKFaultDisputeGame::new(game_impl_address, self.provider());
         let challenger_bond = game_impl.challengerBond().call().await?;
         Ok(challenger_bond)
     }
@@ -167,7 +167,7 @@ where
     /// Get the anchor state registry address.
     async fn get_anchor_state_registry_address(&self, game_type: u32) -> Result<Address> {
         let game_impl_address = self.gameImpls(game_type).call().await?;
-        let game_impl = OPSuccinctFaultDisputeGame::new(game_impl_address, self.provider());
+        let game_impl = OPZisKFaultDisputeGame::new(game_impl_address, self.provider());
         let anchor_state_registry_address = game_impl.anchorStateRegistry().call().await?;
         Ok(anchor_state_registry_address)
     }

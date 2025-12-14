@@ -8,7 +8,7 @@ use sqlx::{
 use std::time::Duration;
 use tracing::info;
 
-use crate::{CommitmentConfig, DriverDBClient, OPSuccinctRequest, RequestStatus, RequestType};
+use crate::{CommitmentConfig, DriverDBClient, OPZisKRequest, RequestStatus, RequestType};
 
 impl DriverDBClient {
     pub async fn new(database_url: &str) -> Result<Self> {
@@ -76,7 +76,7 @@ impl DriverDBClient {
     }
 
     /// Inserts a request into the database.
-    pub async fn insert_request(&self, req: &OPSuccinctRequest) -> Result<PgQueryResult, Error> {
+    pub async fn insert_request(&self, req: &OPZisKRequest) -> Result<PgQueryResult, Error> {
         sqlx::query!(
             r#"
             INSERT INTO requests (
@@ -252,8 +252,8 @@ impl DriverDBClient {
         commitment: &CommitmentConfig,
         l1_chain_id: i64,
         l2_chain_id: i64,
-    ) -> Result<Vec<OPSuccinctRequest>, Error> {
-        let requests = sqlx::query_as::<_, OPSuccinctRequest>(
+    ) -> Result<Vec<OPZisKRequest>, Error> {
+        let requests = sqlx::query_as::<_, OPZisKRequest>(
             "SELECT * FROM requests WHERE range_vkey_commitment = $1 AND rollup_config_hash = $2 AND status = $3 AND l1_chain_id = $4 AND l2_chain_id = $5"
         )
         .bind(&commitment.range_vkey_commitment[..])
@@ -275,9 +275,9 @@ impl DriverDBClient {
         commitment: &CommitmentConfig,
         l1_chain_id: i64,
         l2_chain_id: i64,
-    ) -> Result<Vec<OPSuccinctRequest>, Error> {
+    ) -> Result<Vec<OPZisKRequest>, Error> {
         let requests = sqlx::query_as!(
-            OPSuccinctRequest,
+            OPZisKRequest,
             "SELECT * FROM requests WHERE range_vkey_commitment = $1 AND rollup_config_hash = $2 AND status = $3 AND req_type = $4 AND start_block >= $5 AND end_block <= $6 AND l1_chain_id = $7 AND l2_chain_id = $8 ORDER BY start_block ASC",
             &commitment.range_vkey_commitment[..],
             &commitment.rollup_config_hash[..],
@@ -370,9 +370,9 @@ impl DriverDBClient {
         commitment: &CommitmentConfig,
         l1_chain_id: i64,
         l2_chain_id: i64,
-    ) -> Result<Option<OPSuccinctRequest>, Error> {
+    ) -> Result<Option<OPZisKRequest>, Error> {
         let request = sqlx::query_as!(
-            OPSuccinctRequest,
+            OPZisKRequest,
             "SELECT * FROM requests WHERE range_vkey_commitment = $1 AND rollup_config_hash = $2 AND aggregation_vkey_hash = $3 AND status = $4 AND req_type = $5 AND start_block >= $6 AND l1_chain_id = $7 AND l2_chain_id = $8 ORDER BY start_block ASC LIMIT 1",
             &commitment.range_vkey_commitment[..],
             &commitment.rollup_config_hash[..],
@@ -397,9 +397,9 @@ impl DriverDBClient {
         commitment: &CommitmentConfig,
         l1_chain_id: i64,
         l2_chain_id: i64,
-    ) -> Result<Option<OPSuccinctRequest>, Error> {
+    ) -> Result<Option<OPZisKRequest>, Error> {
         let request = sqlx::query_as!(
-            OPSuccinctRequest,
+            OPZisKRequest,
             "SELECT * FROM requests WHERE range_vkey_commitment = $1 AND rollup_config_hash = $2 AND status = $3 AND req_type = $4 AND start_block >= $5 AND l1_chain_id = $6 AND l2_chain_id = $7 ORDER BY start_block ASC LIMIT 1",
             &commitment.range_vkey_commitment[..],
             &commitment.rollup_config_hash[..],
@@ -571,9 +571,9 @@ impl DriverDBClient {
         commitment: &CommitmentConfig,
         l1_chain_id: i64,
         l2_chain_id: i64,
-    ) -> Result<Option<OPSuccinctRequest>, Error> {
+    ) -> Result<Option<OPZisKRequest>, Error> {
         let request = sqlx::query_as!(
-            OPSuccinctRequest,
+            OPZisKRequest,
             "SELECT * FROM requests WHERE range_vkey_commitment = $1 AND rollup_config_hash = $2 AND aggregation_vkey_hash = $3 AND status = $4 AND req_type = $5 AND start_block = $6 AND l1_chain_id = $7 AND l2_chain_id = $8 ORDER BY start_block ASC LIMIT 1",
             &commitment.range_vkey_commitment[..],
             &commitment.rollup_config_hash[..],
@@ -674,7 +674,7 @@ impl DriverDBClient {
     /// Batch insert requests.
     pub async fn insert_requests(
         &self,
-        requests: &[OPSuccinctRequest],
+        requests: &[OPZisKRequest],
     ) -> Result<PgQueryResult, Error> {
         // Process in batches to avoid PostgreSQL parameter limit of 65535.
         const BATCH_SIZE: usize = 100;

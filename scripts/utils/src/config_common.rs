@@ -65,7 +65,7 @@ pub async fn get_shared_config_data(
     data_fetcher: OPZisKDataFetcher,
 ) -> Result<SharedConfigData> {
     // Determine if we're using mock verifier.
-    let use_sp1_mock_verifier = env::var("OP_SUCCINCT_MOCK")
+    let use_sp1_mock_verifier = env::var("OP_ZISK_MOCK")
         .unwrap_or("false".to_string())
         .parse::<bool>()
         .unwrap_or(false);

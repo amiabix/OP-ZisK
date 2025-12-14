@@ -23,34 +23,34 @@ pub fn get_range_elf_embedded() -> &'static [u8] {
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "celestia")] {
-        use op_zisk_celestia_host_utils::host::CelestiaOPSuccinctHost;
+        use op_zisk_celestia_host_utils::host::CelestiaOPZisKHost;
 
         /// Initialize the Celestia host.
         pub fn initialize_host(
             fetcher: Arc<OPZisKDataFetcher>,
-        ) -> Arc<CelestiaOPSuccinctHost> {
+        ) -> Arc<CelestiaOPZisKHost> {
             tracing::info!("Initializing host with Celestia DA");
-            Arc::new(CelestiaOPSuccinctHost::new(fetcher))
+            Arc::new(CelestiaOPZisKHost::new(fetcher))
         }
     } else if #[cfg(feature = "eigenda")] {
-        use op_zisk_eigenda_host_utils::host::EigenDAOPSuccinctHost;
+        use op_zisk_eigenda_host_utils::host::EigenDAOPZisKHost;
 
         /// Initialize the EigenDA host.
         pub fn initialize_host(
             fetcher: Arc<OPZisKDataFetcher>,
-        ) -> Arc<EigenDAOPSuccinctHost> {
+        ) -> Arc<EigenDAOPZisKHost> {
             tracing::info!("Initializing host with EigenDA");
-            Arc::new(EigenDAOPSuccinctHost::new(fetcher))
+            Arc::new(EigenDAOPZisKHost::new(fetcher))
         }
     } else {
-        use op_zisk_ethereum_host_utils::host::SingleChainOPSuccinctHost;
+        use op_zisk_ethereum_host_utils::host::SingleChainOPZisKHost;
 
         /// Initialize the default (ETH-DA) host.
         pub fn initialize_host(
             fetcher: Arc<OPZisKDataFetcher>,
-        ) -> Arc<SingleChainOPSuccinctHost> {
+        ) -> Arc<SingleChainOPZisKHost> {
             tracing::info!("Initializing host with Ethereum DA");
-            Arc::new(SingleChainOPSuccinctHost::new(fetcher))
+            Arc::new(SingleChainOPZisKHost::new(fetcher))
         }
     }
 }

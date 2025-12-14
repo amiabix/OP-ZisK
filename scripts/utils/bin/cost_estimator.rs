@@ -8,7 +8,7 @@ use op_zisk_host_utils::{
         split_range_basic, SpanBatchRange,
     },
     fetcher::{BlockInfo, OPZisKDataFetcher},
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     setup_logger,
     witness_generation::WitnessGenerator,
 };
@@ -27,7 +27,7 @@ use zisk_sdk::ProverClientBuilder;
 
 /// Run the zkVM execution process for each split range in parallel. Writes the execution stats for
 /// each block range to a CSV file after each execution completes (not guaranteed to be in order).
-async fn execute_blocks_and_write_stats_csv<H: OPSuccinctHost>(
+async fn execute_blocks_and_write_stats_csv<H: OPZisKHost>(
     host: Arc<H>,
     host_args: &[H::Args],
     ranges: Vec<SpanBatchRange>,

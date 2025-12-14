@@ -5,7 +5,7 @@ use log::info;
 use op_zisk_host_utils::{
     block_range::{get_validated_block_range, split_range_basic},
     fetcher::OPZisKDataFetcher,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     witness_generation::WitnessGenerator,
 };
 use op_zisk_proof_utils::{get_range_elf_embedded, initialize_host};

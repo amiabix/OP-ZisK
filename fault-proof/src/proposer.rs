@@ -17,7 +17,7 @@ use op_zisk_client_utils::boot::BootInfoStruct;
 use op_zisk_host_utils::{
     fetcher::OPZisKDataFetcher,
     get_agg_proof_stdin,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     metrics::MetricsGauge,
     witness_generation::WitnessGenerator,
 };
@@ -35,7 +35,7 @@ use crate::{
     contract::{
         DisputeGameFactory::{DisputeGameCreated, DisputeGameFactoryInstance},
         GameStatus,
-        OPSuccinctFaultDisputeGame::{self, OPSuccinctFaultDisputeGameInstance},
+        OPZisKFaultDisputeGame::{self, OPZisKFaultDisputeGameInstance},
         ProposalStatus,
     },
     is_parent_resolved,
@@ -161,10 +161,10 @@ pub struct ProposerStateSnapshot {
 }
 
 #[derive(Clone)]
-pub struct OPSuccinctProposer<P, H: OPSuccinctHost>
+pub struct OPZisKProposer<P, H: OPZisKHost>
 where
     P: Provider + Clone + Send + Sync + 'static,
-    H: OPSuccinctHost + Clone + Send + Sync + 'static,
+    H: OPZisKHost + Clone + Send + Sync + 'static,
 {
     pub config: ProposerConfig,
     pub signer: SignerLock,
@@ -181,10 +181,10 @@ where
     state: Arc<RwLock<ProposerState>>,
 }
 
-impl<P, H> OPSuccinctProposer<P, H>
+impl<P, H> OPZisKProposer<P, H>
 where
     P: Provider + Clone + Send + Sync + 'static,
-    H: OPSuccinctHost + Clone + Send + Sync + 'static,
+    H: OPZisKHost + Clone + Send + Sync + 'static,
 {
     /// Creates a new proposer instance with the provided L1 provider with wallet and factory
     /// contract instance.
@@ -503,7 +503,7 @@ where
 
             for (index, game_address) in games {
                 let contract =
-                    OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+                    OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
                 let claim_data = contract.claimData().call().await?;
                 let status = contract.status().call().await?;
                 let deadline = U256::from(claim_data.deadline).to::<u64>();
@@ -740,7 +740,7 @@ where
             }
         };
 
-        let game = OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+        let game = OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
         let l1_head_hash = game.l1Head().call().await?.0;
         tracing::debug!("L1 head hash: {:?}", hex::encode(l1_head_hash));
 
@@ -914,7 +914,7 @@ where
 
     async fn agg_proof_request(
         &self,
-        game: &OPSuccinctFaultDisputeGameInstance<RootProvider>,
+        game: &OPZisKFaultDisputeGameInstance<RootProvider>,
         zisk_stdin: ZiskStdin,
     ) -> Result<TxHash> {
         tracing::info!("Generating Agg Proof");
@@ -1069,7 +1069,7 @@ where
     }
 
     pub async fn submit_resolution_transaction(&self, game: &Game) -> Result<()> {
-        let contract = OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
         let transaction_request = contract.resolve().into_transaction_request();
         let receipt = self
             .signer
@@ -1090,7 +1090,7 @@ where
     /// Submit the on-chain transaction to claim the proposer's bond for a given game.
     #[tracing::instrument(name = "[[Claiming Proposer Bonds]]", skip(self, game))]
     pub async fn submit_bond_claim_transaction(&self, game: &Game) -> Result<()> {
-        let contract = OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
         let transaction_request =
             contract.claimCredit(self.signer.address()).gas(200_000).into_transaction_request();
         let receipt = self
@@ -1140,7 +1140,7 @@ where
             return Ok(GameFetchResult::UnsupportedType { game_address });
         }
 
-        let contract = OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
 
         let l2_block = contract.l2BlockNumber().call().await?;
         let output_root = self.l2_provider.compute_output_root_at_block(l2_block).await?;
@@ -1571,7 +1571,7 @@ where
 
                     // Check if we own this game
                     let contract =
-                        OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+                        OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
                     let creator = match contract.gameCreator().call().await {
                         Ok(c) => c,
                         Err(e) => {
@@ -1724,11 +1724,11 @@ where
 
     /// Spawn a game proving task for a specific game
     async fn spawn_game_proving_task(&self, game_address: Address, is_defense: bool) -> Result<()> {
-        let proposer: OPSuccinctProposer<P, H> = self.clone();
+        let proposer: OPZisKProposer<P, H> = self.clone();
         let task_id = self.next_task_id.fetch_add(1, Ordering::Relaxed);
 
         // Get the game block number to include in logs
-        let game = OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+        let game = OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
         let starting_l2_block_number = game.startingBlockNumber().call().await?;
         let l2_block_number = game.l2BlockNumber().call().await?;
         let start_block = starting_l2_block_number.to::<u64>();

@@ -76,7 +76,7 @@ impl From<i16> for RequestMode {
 }
 
 #[derive(FromRow, Default, Clone)]
-pub struct OPSuccinctRequest {
+pub struct OPZisKRequest {
     pub id: i64,
     pub status: RequestStatus,
     pub req_type: RequestType,
@@ -109,7 +109,7 @@ pub struct OPSuccinctRequest {
     pub l1_head_block_number: Option<i64>, // L1 head block number used for request
 }
 
-impl OPSuccinctRequest {
+impl OPZisKRequest {
     /// Creates a new range request and fetches the block data.
     #[allow(clippy::too_many_arguments)]
     pub async fn create_range_request(

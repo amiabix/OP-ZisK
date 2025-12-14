@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use op_zisk_host_utils::block_range::get_validated_block_range;
 use op_zisk_host_utils::fetcher::OPZisKDataFetcher;
-use op_zisk_host_utils::host::OPSuccinctHost;
+use op_zisk_host_utils::host::OPZisKHost;
 use op_zisk_host_utils::setup_logger;
 use op_zisk_host_utils::witness_generation::WitnessGenerator;
 use op_zisk_proof_utils::initialize_host;

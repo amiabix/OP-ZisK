@@ -303,7 +303,7 @@ upgrade-fault-dispute-game env_file="fault-proof/.env.upgrade":
             --sig "getUpgradeCalldata()"
     fi
 
-# Add a new OpSuccinctConfig to the L2 Output Oracle
+# Add a new OpZiskConfig to the L2 Output Oracle
 add-config config_name env_file=".env" *features='':
     #!/usr/bin/env bash
     set -euo pipefail
@@ -336,7 +336,7 @@ add-config config_name env_file=".env" *features='':
         --private-key $PRIVATE_KEY \
         --broadcast
 
-# Remove an OpSuccinctConfig from the L2 Output Oracle  
+# Remove an OpZiskConfig from the L2 Output Oracle  
 remove-config config_name env_file=".env":
     #!/usr/bin/env bash
     set -euo pipefail

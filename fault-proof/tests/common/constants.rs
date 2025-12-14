@@ -23,7 +23,7 @@ pub const CHALLENGER_PRIVATE_KEY: &str = ANVIL_ACCOUNT_1_PRIVATE_KEY;
 pub const DEPLOYER_PRIVATE_KEY: &str = ANVIL_ACCOUNT_0_PRIVATE_KEY;
 
 // Test configuration constants
-pub const TEST_GAME_TYPE: u32 = 42; // Must match OP_SUCCINCT_FAULT_DISPUTE_GAME_TYPE in contracts
+pub const TEST_GAME_TYPE: u32 = 42; // Must match OP_ZISK_FAULT_DISPUTE_GAME_TYPE in contracts (formerly OP_SUCCINCT_FAULT_DISPUTE_GAME_TYPE)
 pub const INIT_BOND: U256 = U256::from_limbs([10_000_000_000_000_000, 0, 0, 0]); // 0.01 ETH
 pub const CHALLENGER_BOND: U256 = U256::from_limbs([1_000_000_000_000_000_000, 0, 0, 0]); // 1 ETH
 
@@ -33,7 +33,7 @@ pub const MAX_CHALLENGE_DURATION: u64 = 60 * 60; // 1 hour
 pub const MAX_PROVE_DURATION: u64 = 60 * 60 * 12; // 12 hours
 pub const FALLBACK_TIMEOUT: U256 = U256::from_limbs([1209600, 0, 0, 0]); // 2 weeks
 
-// Configuration hashes for OPSuccinctFaultDisputeGame
+// Configuration hashes for OPZisKFaultDisputeGame
 pub const ROLLUP_CONFIG_HASH: B256 = B256::ZERO; // Mock value for testing
 pub const AGGREGATION_VKEY: B256 = B256::ZERO; // Mock value for testing
 pub const RANGE_VKEY_COMMITMENT: B256 = B256::ZERO; // Mock value for testing

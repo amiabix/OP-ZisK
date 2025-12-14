@@ -3,7 +3,7 @@ use alloy_provider::Provider;
 use anyhow::{Context, Result};
 use op_zisk_client_utils::boot::BootInfoStruct;
 use op_zisk_host_utils::{
-    fetcher::OPZisKDataFetcher, get_agg_proof_stdin, host::OPSuccinctHost,
+    fetcher::OPZisKDataFetcher, get_agg_proof_stdin, host::OPZisKHost,
     metrics::MetricsGauge, witness_generation::WitnessGenerator,
 };
 use zisk_sdk::ProverClientBuilder;
@@ -16,11 +16,11 @@ use std::{
 use tracing::{info, warn};
 
 use crate::{
-    db::DriverDBClient, OPSuccinctRequest, ProgramConfig, RequestExecutionStatistics,
+    db::DriverDBClient, OPZisKRequest, ProgramConfig, RequestExecutionStatistics,
     RequestStatus, RequestType, ValidityGauge,
 };
 
-pub struct OPSuccinctProofRequester<H: OPSuccinctHost> {
+pub struct OPZisKProofRequester<H: OPZisKHost> {
     pub host: Arc<H>,
     pub fetcher: Arc<OPZisKDataFetcher>,
     pub db_client: Arc<DriverDBClient>,
@@ -31,7 +31,7 @@ pub struct OPSuccinctProofRequester<H: OPSuccinctHost> {
     pub output_dir: PathBuf,
 }
 
-impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
+impl<H: OPZisKHost> OPZisKProofRequester<H> {
     pub fn new(
         host: Arc<H>,
         fetcher: Arc<OPZisKDataFetcher>,
@@ -55,7 +55,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     }
 
     /// Generates the witness for a range proof.
-    pub async fn range_proof_witnessgen(&self, request: &OPSuccinctRequest) -> Result<ZiskStdin> {
+    pub async fn range_proof_witnessgen(&self, request: &OPZisKRequest) -> Result<ZiskStdin> {
         let host_args = self
             .host
             .fetch(
@@ -241,7 +241,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     /// Generates a mock range proof and writes the execution statistics to the database.
     pub async fn generate_mock_range_proof(
         &self,
-        request: &OPSuccinctRequest,
+        request: &OPZisKRequest,
         stdin: ZiskStdin,
     ) -> Result<Vec<u8>> {
         info!(
@@ -302,7 +302,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     /// Generates a mock aggregation proof.
     pub async fn generate_mock_agg_proof(
         &self,
-        request: &OPSuccinctRequest,
+        request: &OPZisKRequest,
         stdin: ZiskStdin,
     ) -> Result<Vec<u8>> {
         let start_time = Instant::now();
@@ -365,7 +365,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     )]
     pub async fn handle_failed_request(
         &self,
-        request: OPSuccinctRequest,
+        request: OPZisKRequest,
         _execution_status: i32,
     ) -> Result<()> {
         warn!(
@@ -399,7 +399,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
                 info!("Splitting failed request into two: {:?}", request.id);
                 let mid_block = (request.start_block + request.end_block) / 2;
                 let new_requests = vec![
-                    OPSuccinctRequest::create_range_request(
+                    OPZisKRequest::create_range_request(
                         request.mode,
                         request.start_block,
                         mid_block,
@@ -410,7 +410,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
                         self.fetcher.clone(),
                     )
                     .await?,
-                    OPSuccinctRequest::create_range_request(
+                    OPZisKRequest::create_range_request(
                         request.mode,
                         mid_block,
                         request.end_block,
@@ -431,7 +431,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     }
 
     #[tracing::instrument(name = "proof_requester.handle_cancelled_request", skip(self, request))]
-    pub async fn handle_cancelled_request(&self, request: OPSuccinctRequest) -> Result<()> {
+    pub async fn handle_cancelled_request(&self, request: OPZisKRequest) -> Result<()> {
         warn!(
             id = request.id,
             start_block = request.start_block,
@@ -446,7 +446,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     }
 
     /// Generates the stdin needed for a proof.
-    async fn generate_proof_stdin(&self, request: &OPSuccinctRequest) -> Result<ZiskStdin> {
+    async fn generate_proof_stdin(&self, request: &OPZisKRequest) -> Result<ZiskStdin> {
         let stdin = match request.req_type {
             RequestType::Range => self.range_proof_witnessgen(request).await?,
             RequestType::Aggregation => {
@@ -474,7 +474,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
     ///
     /// Note: Any error from this function will cause the proof to be retried.
     #[tracing::instrument(name = "proof_requester.make_proof_request", skip(self, request))]
-    pub async fn make_proof_request(&self, request: OPSuccinctRequest) -> Result<()> {
+    pub async fn make_proof_request(&self, request: OPZisKRequest) -> Result<()> {
         // Update status to WitnessGeneration.
         self.db_client.update_request_status(request.id, RequestStatus::WitnessGeneration).await?;
 
@@ -565,7 +565,7 @@ impl<H: OPSuccinctHost> OPSuccinctProofRequester<H> {
 
     /// Helper function to reconstruct boot_info from block range when not stored in DB
     async fn reconstruct_boot_info_from_range(
-        range_proof: &OPSuccinctRequest,
+        range_proof: &OPZisKRequest,
         fetcher: &Arc<OPZisKDataFetcher>,
     ) -> Result<BootInfoStruct> {
         // Use checkpointed L1 head if available, otherwise fetch it

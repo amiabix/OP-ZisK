@@ -5,14 +5,14 @@ use alloy_primitives::Address;
 use alloy_provider::ProviderBuilder;
 use anyhow::Result;
 use fault_proof::{
-    challenger::OPSuccinctChallenger,
+    challenger::OPZisKChallenger,
     config::{ChallengerConfig, RangeSplitCount},
     contract::DisputeGameFactory,
-    proposer::OPSuccinctProposer,
+    proposer::OPZisKProposer,
 };
 use op_zisk_host_utils::{
     fetcher::{OPZisKDataFetcher, RPCConfig},
-    host::OPSuccinctHost,
+    host::OPZisKHost,
 };
 use op_zisk_proof_utils::initialize_host;
 use op_zisk_signer_utils::SignerLock;
@@ -24,7 +24,7 @@ pub async fn init_proposer(
     private_key: &str,
     factory_address: &Address,
     game_type: u32,
-) -> Result<OPSuccinctProposer<fault_proof::L1Provider, impl OPSuccinctHost + Clone>> {
+) -> Result<OPZisKProposer<fault_proof::L1Provider, impl OPZisKHost + Clone>> {
     // Create signer directly from private key
     let signer = SignerLock::new(op_zisk_signer_utils::Signer::new_local_signer(private_key)?);
 
@@ -64,7 +64,7 @@ pub async fn init_proposer(
     let fetcher = Arc::new(OPZisKDataFetcher::new_with_rollup_config().await?);
     let host = initialize_host(fetcher.clone());
 
-    OPSuccinctProposer::new(config, signer, factory, fetcher, host).await
+    OPZisKProposer::new(config, signer, factory, fetcher, host).await
 }
 
 /// Start a proposer, and return a handle to the proposer task.
@@ -87,7 +87,7 @@ pub async fn init_challenger(
     factory_address: &Address,
     game_type: u32,
     malicious_percentage: Option<f64>,
-) -> Result<OPSuccinctChallenger<fault_proof::L1Provider>> {
+) -> Result<OPZisKChallenger<fault_proof::L1Provider>> {
     let signer = SignerLock::new(op_zisk_signer_utils::Signer::new_local_signer(private_key)?);
 
     let config = ChallengerConfig {
@@ -103,7 +103,7 @@ pub async fn init_challenger(
     let l1_provider = ProviderBuilder::default().connect_http(rpc_config.l1_rpc.clone());
     let factory = DisputeGameFactory::new(*factory_address, l1_provider.clone());
 
-    OPSuccinctChallenger::new(config, l1_provider, factory, signer).await
+    OPZisKChallenger::new(config, l1_provider, factory, signer).await
 }
 
 /// Start a challenger, and return a handle to the challenger task.

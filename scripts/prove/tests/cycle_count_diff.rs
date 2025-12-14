@@ -5,7 +5,7 @@ use common::post_to_github_pr;
 use op_zisk_host_utils::{
     block_range::get_rolling_block_range,
     fetcher::OPZisKDataFetcher,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     stats::{ExecutionStats, MarkdownExecutionStats},
     witness_generation::WitnessGenerator,
 };

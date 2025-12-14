@@ -55,7 +55,7 @@ fn is_historical_state_unavailable_opaque(err: &anyhow::Error) -> bool {
 }
 
 fn rpc_concurrency() -> usize {
-    env::var("OP_SUCCINCT_RPC_CONCURRENCY")
+    env::var("OP_ZISK_RPC_CONCURRENCY").or_else(|_| env::var("OP_SUCCINCT_RPC_CONCURRENCY"))
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|v| *v >= 1)
@@ -63,7 +63,7 @@ fn rpc_concurrency() -> usize {
 }
 
 fn rpc_retries() -> usize {
-    env::var("OP_SUCCINCT_RPC_RETRIES")
+    env::var("OP_ZISK_RPC_RETRIES").or_else(|_| env::var("OP_SUCCINCT_RPC_RETRIES"))
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|v| *v >= 1)

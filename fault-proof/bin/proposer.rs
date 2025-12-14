@@ -7,7 +7,7 @@ use anyhow::Result;
 use clap::Parser;
 use fault_proof::{
     config::ProposerConfig, contract::DisputeGameFactory, prometheus::ProposerGauge,
-    proposer::OPSuccinctProposer,
+    proposer::OPZisKProposer,
 };
 use op_zisk_host_utils::{
     fetcher::OPZisKDataFetcher,
@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
     let host = initialize_host(Arc::new(fetcher.clone()));
 
     let proposer = Arc::new(
-        OPSuccinctProposer::new(proposer_config, proposer_signer, factory, Arc::new(fetcher), host)
+        OPZisKProposer::new(proposer_config, proposer_signer, factory, Arc::new(fetcher), host)
             .await
             .unwrap(),
     );

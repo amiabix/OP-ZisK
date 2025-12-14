@@ -2,7 +2,7 @@ use alloy_primitives::{Address, B256};
 use alloy_provider::Provider;
 use op_zisk_host_utils::{
     DisputeGameFactory::DisputeGameFactoryInstance as DisputeGameFactoryContract,
-    OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract,
+    OPZisKL2OutputOracle::OPZisKL2OutputOracleInstance as OPZisKL2OOContract,
 };
 use std::path::PathBuf;
 
@@ -12,7 +12,7 @@ where
 {
     pub l2oo_address: Address,
     pub dgf_address: Address,
-    pub l2oo_contract: OPSuccinctL2OOContract<P>,
+    pub l2oo_contract: OPZisKL2OOContract<P>,
     pub dgf_contract: DisputeGameFactoryContract<P>,
 }
 

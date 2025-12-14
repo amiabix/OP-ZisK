@@ -7,16 +7,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use kona_host::single::SingleChainHost;
 use op_zisk_ethereum_client_utils::executor::ETHDAWitnessExecutor;
-use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPZisKHost};
 
 #[derive(Clone)]
-pub struct SingleChainOPSuccinctHost {
+pub struct SingleChainOPZisKHost {
     pub fetcher: Arc<OPZisKDataFetcher>,
     witness_generator: Arc<ETHDAWitnessGenerator>,
 }
 
 #[async_trait]
-impl OPSuccinctHost for SingleChainOPSuccinctHost {
+impl OPZisKHost for SingleChainOPZisKHost {
     type Args = SingleChainHost;
     type WitnessGenerator = ETHDAWitnessGenerator;
 
@@ -78,7 +78,7 @@ impl OPSuccinctHost for SingleChainOPSuccinctHost {
     }
 }
 
-impl SingleChainOPSuccinctHost {
+impl SingleChainOPZisKHost {
     pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self {
             fetcher,

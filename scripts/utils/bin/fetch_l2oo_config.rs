@@ -2,8 +2,8 @@ use alloy_eips::BlockId;
 use anyhow::{bail, Result};
 use op_zisk_host_utils::{
     fetcher::{OPZisKDataFetcher, RPCMode},
-    host::OPSuccinctHost,
-    setup_logger, OP_SUCCINCT_L2_OUTPUT_ORACLE_CONFIG_PATH,
+    host::OPZisKHost,
+    setup_logger, OP_ZISK_L2_OUTPUT_ORACLE_CONFIG_PATH,
 };
 use op_zisk_proof_utils::initialize_host;
 use op_zisk_scripts::config_common::{
@@ -15,7 +15,7 @@ use std::{env, sync::Arc};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-/// The config for deploying the OPSuccinctL2OutputOracle.
+/// The config for deploying the OPZisKL2OutputOracle.
 /// Note: The fields should be in alphabetical order for Solidity to parse it correctly.
 struct L2OOConfig {
     aggregation_vkey: String,
@@ -150,7 +150,7 @@ async fn update_l2oo_config() -> Result<()> {
         op_zisk_l2_output_oracle_impl,
     };
 
-    write_config_file(&l2oo_config, &OP_SUCCINCT_L2_OUTPUT_ORACLE_CONFIG_PATH, "L2 Output Oracle")?;
+    write_config_file(&l2oo_config, &OP_ZISK_L2_OUTPUT_ORACLE_CONFIG_PATH, "L2 Output Oracle")?;
 
     Ok(())
 }

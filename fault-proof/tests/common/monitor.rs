@@ -8,7 +8,7 @@ use anyhow::Result;
 use fault_proof::contract::{GameStatus, ProposalStatus};
 use op_zisk_bindings::{
     dispute_game_factory::DisputeGameFactory,
-    op_zisk_fault_dispute_game::OPSuccinctFaultDisputeGame,
+    op_zisk_fault_dispute_game::OPZisKFaultDisputeGame,
 };
 use tokio::time::{sleep, Instant};
 use tracing::info;
@@ -128,7 +128,7 @@ pub async fn wait_and_track_games<P: Provider>(
                 // Check if it's our game type
                 if game_info.gameType_ == game_type {
                     let game =
-                        OPSuccinctFaultDisputeGame::new(game_info.proxy_, factory.provider());
+                        OPZisKFaultDisputeGame::new(game_info.proxy_, factory.provider());
 
                     // Get game details
                     let l2_block_number = game.l2BlockNumber().call().await?;
@@ -182,7 +182,7 @@ pub async fn wait_for_resolutions<P: Provider>(
         }
 
         for (i, game) in tracked_games.iter().enumerate() {
-            let game_contract = OPSuccinctFaultDisputeGame::new(game.address, provider);
+            let game_contract = OPZisKFaultDisputeGame::new(game.address, provider);
             let status = GameStatus::try_from(game_contract.status().call().await?)?;
 
             statuses[i] = status;
@@ -220,7 +220,7 @@ pub async fn wait_for_challenges<P: Provider>(
         }
 
         for (i, &game_address) in game_addresses.iter().enumerate() {
-            let game = OPSuccinctFaultDisputeGame::new(game_address, provider);
+            let game = OPZisKFaultDisputeGame::new(game_address, provider);
             let claim_data = game.claimData().call().await?;
             let claim_data_status = ProposalStatus::try_from(claim_data.status)?;
 
@@ -266,7 +266,7 @@ pub async fn wait_for_bond_claims<P: Provider>(
                 continue; // Already claimed
             }
 
-            let game_contract = OPSuccinctFaultDisputeGame::new(game.address, provider);
+            let game_contract = OPZisKFaultDisputeGame::new(game.address, provider);
 
             // Check both normalModeCredit and refundModeCredit balances
             // When credit is claimed, both should be 0
@@ -344,7 +344,7 @@ pub async fn wait_and_verify_game_resolutions<P: Provider>(
         let mut statuses = Vec::new();
 
         for &game_address in game_addresses.iter() {
-            let game = OPSuccinctFaultDisputeGame::new(game_address, provider);
+            let game = OPZisKFaultDisputeGame::new(game_address, provider);
             let status = GameStatus::try_from(game.status().call().await?)?;
             statuses.push(status);
         }

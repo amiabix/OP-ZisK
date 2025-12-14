@@ -5,8 +5,8 @@ use anyhow::{bail, Result};
 use fault_proof::config::FaultDisputeGameConfig;
 use op_zisk_host_utils::{
     fetcher::{OPZisKDataFetcher, RPCMode},
-    host::OPSuccinctHost,
-    setup_logger, OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH,
+    host::OPZisKHost,
+    setup_logger, OP_ZISK_FAULT_DISPUTE_GAME_CONFIG_PATH,
 };
 use op_zisk_proof_utils::initialize_host;
 use op_zisk_scripts::config_common::{
@@ -19,7 +19,7 @@ use serde_json::Value;
 ///
 /// This function fetches the necessary configuration parameters from environment variables
 /// and shared configuration data to generate a JSON configuration file used for deploying
-/// the OPSuccinctFaultDisputeGame contract.
+/// the OPZisKFaultDisputeGame contract.
 ///
 /// # Environment Variables
 ///
@@ -205,7 +205,7 @@ async fn update_fdg_config() -> Result<()> {
 
     write_config_file(
         &fdg_config,
-        &OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH,
+        &OP_ZISK_FAULT_DISPUTE_GAME_CONFIG_PATH,
         "Fault Dispute Game",
     )?;
 

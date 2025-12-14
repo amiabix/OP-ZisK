@@ -215,7 +215,7 @@ impl ChallengerConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-/// The config for deploying the OPSuccinctFaultDisputeGame.
+/// The config for deploying the OPZisKFaultDisputeGame.
 /// Note: The fields should be in alphabetical order for Solidity to parse it correctly.
 pub struct FaultDisputeGameConfig {
     pub aggregation_vkey: String,

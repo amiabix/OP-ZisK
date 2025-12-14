@@ -5,18 +5,18 @@ use alloy_primitives::B256;
 use anyhow::Result;
 use async_trait::async_trait;
 use hokulea_host_bin::cfg::SingleChainHostWithEigenDA;
-use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPZisKHost};
 
 use crate::witness_generator::EigenDAWitnessGenerator;
 
 #[derive(Clone)]
-pub struct EigenDAOPSuccinctHost {
+pub struct EigenDAOPZisKHost {
     pub fetcher: Arc<OPZisKDataFetcher>,
     pub witness_generator: Arc<EigenDAWitnessGenerator>,
 }
 
 #[async_trait]
-impl OPSuccinctHost for EigenDAOPSuccinctHost {
+impl OPZisKHost for EigenDAOPZisKHost {
     type Args = SingleChainHostWithEigenDA;
     type WitnessGenerator = EigenDAWitnessGenerator;
 
@@ -83,7 +83,7 @@ impl OPSuccinctHost for EigenDAOPSuccinctHost {
     }
 }
 
-impl EigenDAOPSuccinctHost {
+impl EigenDAOPZisKHost {
     pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self { fetcher, witness_generator: Arc::new(EigenDAWitnessGenerator {}) }
     }

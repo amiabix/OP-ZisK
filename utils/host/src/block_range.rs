@@ -11,13 +11,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     fetcher::{OPZisKDataFetcher, RPCMode},
-    host::OPSuccinctHost,
+    host::OPZisKHost,
 };
 
 const TWO_HOURS_IN_BLOCKS: u64 = 3600;
 
 /// Get the start and end block numbers for a range, with validation.
-pub async fn get_validated_block_range<H: OPSuccinctHost>(
+pub async fn get_validated_block_range<H: OPZisKHost>(
     host: &H,
     data_fetcher: &OPZisKDataFetcher,
     start: Option<u64>,
@@ -71,7 +71,7 @@ pub async fn get_validated_block_range<H: OPSuccinctHost>(
 ///
 /// The returned tuple represents the last `range` blocks that the host considers finalized
 /// according to its DA-specific logic, making the range safe to use for proof generation.
-pub async fn get_rolling_block_range<H: OPSuccinctHost>(
+pub async fn get_rolling_block_range<H: OPZisKHost>(
     host: &H,
     data_fetcher: &OPZisKDataFetcher,
     range: u64,

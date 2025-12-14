@@ -1,18 +1,18 @@
-use crate::OPSuccinctL2OutputOracle::opSuccinctConfigsReturn;
+use crate::OPZisKL2OutputOracle::opZiskConfigsReturn;
 use alloy_primitives::B256;
 use alloy_sol_types::sol;
 
-// Sourced from op-succinct/contracts/src/validity/OPSuccinctL2OutputOracle.sol
+// Sourced from contracts/src/validity/OPZisKL2OutputOracle.sol
 sol! {
     #[sol(rpc)]
-    contract OPSuccinctL2OutputOracle {
-        struct OpSuccinctConfig {
+    contract OPZisKL2OutputOracle {
+        struct OpZiskConfig {
             bytes32 aggregationVkey;
             bytes32 rangeVkeyCommitment;
             bytes32 rollupConfigHash;
         }
 
-        mapping(bytes32 => OpSuccinctConfig) public opSuccinctConfigs;
+        mapping(bytes32 => OpZiskConfig) public opZiskConfigs;
 
         uint256 public submissionInterval;
 
@@ -44,7 +44,7 @@ sol! {
     }
 }
 
-impl opSuccinctConfigsReturn {
+impl opZiskConfigsReturn {
     pub fn aggregation_vkey(&self) -> B256 {
         self._0
     }

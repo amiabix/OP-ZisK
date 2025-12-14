@@ -88,7 +88,7 @@ Initialize dependencies (e.g. `git submodule update --init --recursive`) and ret
         "AnchorStateRegistry",
         "AccessManager",
         "SP1MockVerifier",
-        "OPSuccinctFaultDisputeGame",
+        "OPZisKFaultDisputeGame",
         "ERC1967Proxy",
         "MockPermissionedDisputeGame",
         // Also include interfaces that we need

@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use async_trait::async_trait;
 use hana_host::celestia::{CelestiaCfg, CelestiaChainHost};
 use op_zisk_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
-use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPZisKHost};
 
 use crate::{
     blobstream_utils::{get_celestia_safe_head_info, get_highest_finalized_l2_block},
@@ -13,13 +13,13 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct CelestiaOPSuccinctHost {
+pub struct CelestiaOPZisKHost {
     pub fetcher: Arc<OPZisKDataFetcher>,
     pub witness_generator: Arc<CelestiaDAWitnessGenerator>,
 }
 
 #[async_trait]
-impl OPSuccinctHost for CelestiaOPSuccinctHost {
+impl OPZisKHost for CelestiaOPZisKHost {
     type Args = CelestiaChainHost;
     type WitnessGenerator = CelestiaDAWitnessGenerator;
 
@@ -84,7 +84,7 @@ impl OPSuccinctHost for CelestiaOPSuccinctHost {
     }
 }
 
-impl CelestiaOPSuccinctHost {
+impl CelestiaOPZisKHost {
     pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self {
             fetcher,

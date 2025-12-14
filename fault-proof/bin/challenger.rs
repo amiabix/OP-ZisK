@@ -6,7 +6,7 @@ use alloy_transport_http::reqwest::Url;
 use anyhow::Result;
 use clap::Parser;
 use fault_proof::{
-    challenger::OPSuccinctChallenger, config::ChallengerConfig, contract::DisputeGameFactory,
+    challenger::OPZisKChallenger, config::ChallengerConfig, contract::DisputeGameFactory,
     prometheus::ChallengerGauge,
 };
 use op_zisk_host_utils::{
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
     );
 
     let mut challenger =
-        OPSuccinctChallenger::new(challenger_config, l1_provider, factory, challenger_signer)
+        OPZisKChallenger::new(challenger_config, l1_provider, factory, challenger_signer)
             .await
             .unwrap();
 

@@ -63,7 +63,7 @@ impl PreimageServerStarter for SingleChainHostWithEigenDA {
 }
 
 #[async_trait]
-pub trait OPSuccinctHost: Send + Sync + 'static {
+pub trait OPZisKHost: Send + Sync + 'static {
     type Args: Send + Sync + 'static + Clone + PreimageServerStarter;
     type WitnessGenerator: WitnessGenerator + Send + Sync;
 

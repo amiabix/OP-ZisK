@@ -52,7 +52,7 @@ sol! {
     }
 
     #[sol(rpc)]
-    contract OPSuccinctFaultDisputeGame {
+    contract OPZisKFaultDisputeGame {
         /// @notice Getter for the game type.
         function gameType() public pure returns (GameType gameType_);
 

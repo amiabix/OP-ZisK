@@ -228,7 +228,7 @@ impl SignerLock {
 mod tests {
     use alloy_eips::BlockId;
     use alloy_primitives::{address, U256};
-    use op_zisk_host_utils::OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract;
+    use op_zisk_host_utils::OPZisKL2OutputOracle::OPZisKL2OutputOracleInstance as OPZisKL2OOContract;
 
     use super::*;
 
@@ -244,7 +244,7 @@ mod tests {
             .network::<Ethereum>()
             .connect_http("http://localhost:8545".parse().unwrap());
 
-        let l2oo_contract = OPSuccinctL2OOContract::new(
+        let l2oo_contract = OPZisKL2OOContract::new(
             address!("0xDafA1019F21AB8B27b319B1085f93673F02A69B7"),
             provider.clone(),
         );

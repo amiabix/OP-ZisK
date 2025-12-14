@@ -10,7 +10,7 @@ use tokio::{sync::Mutex, time};
 use crate::{
     config::ChallengerConfig,
     contract::{
-        DisputeGameFactory::DisputeGameFactoryInstance, GameStatus, OPSuccinctFaultDisputeGame,
+        DisputeGameFactory::DisputeGameFactoryInstance, GameStatus, OPZisKFaultDisputeGame,
         ProposalStatus,
     },
     is_parent_challenger_wins, is_parent_resolved,
@@ -20,7 +20,7 @@ use crate::{
 use op_zisk_host_utils::metrics::MetricsGauge;
 use op_zisk_signer_utils::SignerLock;
 
-pub struct OPSuccinctChallenger<P>
+pub struct OPZisKChallenger<P>
 where
     P: Provider + Clone,
 {
@@ -33,7 +33,7 @@ where
     state: Arc<Mutex<ChallengerState>>,
 }
 
-impl<P> OPSuccinctChallenger<P>
+impl<P> OPZisKChallenger<P>
 where
     P: Provider + Clone,
 {
@@ -47,7 +47,7 @@ where
         let challenger_bond = factory.fetch_challenger_bond(config.game_type).await?;
         let l2_rpc = config.l2_rpc.clone();
 
-        Ok(OPSuccinctChallenger {
+        Ok(OPZisKChallenger {
             config,
             signer,
             l1_provider: l1_provider.clone(),
@@ -165,7 +165,7 @@ where
 
             for game in games {
                 let contract =
-                    OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+                    OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
                 let status = contract.status().call().await?;
                 let claim_data = contract.claimData().call().await?;
                 let proposal_status = claim_data.status;
@@ -271,7 +271,7 @@ where
     async fn fetch_game(&self, index: U256) -> Result<()> {
         let game = self.factory.gameAtIndex(index).call().await?;
         let game_address = game.proxy;
-        let contract = OPSuccinctFaultDisputeGame::new(game_address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game_address, self.l1_provider.clone());
 
         let game_type = contract.gameType().call().await?;
         if game_type != self.config.game_type {
@@ -412,7 +412,7 @@ where
     }
 
     pub async fn submit_challenge_transaction(&self, game: &Game) -> Result<()> {
-        let contract = OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
         let transaction_request =
             contract.challenge().value(self.challenger_bond).into_transaction_request();
         let receipt = self
@@ -463,7 +463,7 @@ where
     }
 
     pub async fn submit_resolution_transaction(&self, game: &Game) -> Result<()> {
-        let contract = OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
         let transaction_request = contract.resolve().into_transaction_request();
         let receipt = self
             .signer
@@ -514,7 +514,7 @@ where
 
     #[tracing::instrument(name = "[[Claiming Proposer Bonds]]", skip(self, game))]
     async fn submit_bond_claim_transaction(&self, game: &Game) -> Result<()> {
-        let contract = OPSuccinctFaultDisputeGame::new(game.address, self.l1_provider.clone());
+        let contract = OPZisKFaultDisputeGame::new(game.address, self.l1_provider.clone());
         let transaction_request =
             contract.claimCredit(self.signer.address()).gas(200_000).into_transaction_request();
         let receipt = self

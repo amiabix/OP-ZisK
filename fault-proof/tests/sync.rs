@@ -18,11 +18,11 @@ mod sync {
     use fault_proof::{
         contract::ProposalStatus,
         proposer::{
-            Game, GameFetchResult, OPSuccinctProposer, ProposerStateSnapshot, MAX_GAME_DEADLINE_LAG,
+            Game, GameFetchResult, OPZisKProposer, ProposerStateSnapshot, MAX_GAME_DEADLINE_LAG,
         },
     };
     use op_zisk_bindings::dispute_game_factory::DisputeGameFactory;
-    use op_zisk_host_utils::host::OPSuccinctHost;
+    use op_zisk_host_utils::host::OPZisKHost;
     use rand::Rng;
     use rstest::rstest;
 
@@ -30,7 +30,7 @@ mod sync {
 
     async fn setup() -> Result<(
         TestEnvironment,
-        OPSuccinctProposer<fault_proof::L1Provider, impl OPSuccinctHost + Clone>,
+        OPZisKProposer<fault_proof::L1Provider, impl OPZisKHost + Clone>,
         Uint<256, 4>,
     )> {
         let env = TestEnvironment::setup().await?;
@@ -40,8 +40,8 @@ mod sync {
         Ok((env, proposer, init_bond))
     }
 
-    async fn cached_game<H: OPSuccinctHost + Clone>(
-        proposer: &OPSuccinctProposer<fault_proof::L1Provider, H>,
+    async fn cached_game<H: OPZisKHost + Clone>(
+        proposer: &OPZisKProposer<fault_proof::L1Provider, H>,
         index: u64,
     ) -> Result<Game> {
         proposer

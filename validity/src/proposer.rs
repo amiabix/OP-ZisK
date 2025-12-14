@@ -8,19 +8,19 @@ use futures_util::{stream, StreamExt, TryStreamExt};
 use op_zisk_client_utils::boot::hash_rollup_config;
 use op_zisk_host_utils::{
     fetcher::OPZisKDataFetcher,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     metrics::MetricsGauge,
     DisputeGameFactory::DisputeGameFactoryInstance as DisputeGameFactoryContract,
-    OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract,
+    OPZisKL2OutputOracle::OPZisKL2OutputOracleInstance as OPZisKL2OOContract,
 };
 use op_zisk_signer_utils::SignerLock;
 use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 
 use crate::{
-    db::{DriverDBClient, OPSuccinctRequest, RequestMode, RequestStatus, RequestType},
+    db::{DriverDBClient, OPZisKRequest, RequestMode, RequestStatus, RequestType},
     find_gaps, get_latest_proposed_block_number, get_ranges_to_prove_by_blocks,
-    get_ranges_to_prove_by_gas, CommitmentConfig, ContractConfig, OPSuccinctProofRequester,
+    get_ranges_to_prove_by_gas, CommitmentConfig, ContractConfig, OPZisKProofRequester,
     ProgramConfig, RequesterConfig, ValidityGauge,
 };
 
@@ -32,9 +32,9 @@ pub struct DriverConfig {
     pub loop_interval: u64,
 }
 /// Type alias for a map of task IDs to their join handles and associated requests
-pub type TaskMap = HashMap<i64, (tokio::task::JoinHandle<Result<()>>, OPSuccinctRequest)>;
+pub type TaskMap = HashMap<i64, (tokio::task::JoinHandle<Result<()>>, OPZisKRequest)>;
 
-pub struct Proposer<P, H: OPSuccinctHost>
+pub struct Proposer<P, H: OPZisKHost>
 where
     P: Provider + 'static,
 {
@@ -42,11 +42,11 @@ where
     contract_config: ContractConfig<P>,
     program_config: ProgramConfig,
     requester_config: RequesterConfig,
-    proof_requester: Arc<OPSuccinctProofRequester<H>>,
+    proof_requester: Arc<OPZisKProofRequester<H>>,
     tasks: Arc<Mutex<TaskMap>>,
 }
 
-impl<P, H: OPSuccinctHost> Proposer<P, H>
+impl<P, H: OPZisKHost> Proposer<P, H>
 where
     P: Provider + 'static + Clone,
 {
@@ -124,7 +124,7 @@ where
         let output_dir = std::env::var("PROOF_OUTPUT_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("tmp"));
-        let proof_requester = Arc::new(OPSuccinctProofRequester::new(
+        let proof_requester = Arc::new(OPZisKProofRequester::new(
             host,
             fetcher.clone(),
             db_client.clone(),
@@ -136,7 +136,7 @@ where
         ));
 
         let l2oo_contract =
-            OPSuccinctL2OOContract::new(requester_config.l2oo_address, provider.clone());
+            OPZisKL2OOContract::new(requester_config.l2oo_address, provider.clone());
 
         let dgf_contract =
             DisputeGameFactoryContract::new(requester_config.dgf_address, provider.clone());
@@ -264,7 +264,7 @@ where
                     } else {
                         RequestMode::Real
                     };
-                    OPSuccinctRequest::create_range_request(
+                    OPZisKRequest::create_range_request(
                         mode,
                         range.start,
                         range.end,
@@ -276,7 +276,7 @@ where
                     )
                 })
                 .buffered(10) // Do 10 at a time, otherwise it's too slow when fetching the block range data.
-                .try_collect::<Vec<OPSuccinctRequest>>()
+                .try_collect::<Vec<OPZisKRequest>>()
                 .await?;
 
             // Insert the new range proof requests into the database.
@@ -322,7 +322,7 @@ where
     /// Note: ZisK generates proofs synchronously, so this function is simplified.
     /// Proofs should already be in the database when status is "Prove".
     #[tracing::instrument(name = "proposer.process_proof_request_status", skip(self, request))]
-    pub async fn process_proof_request_status(&self, request: OPSuccinctRequest) -> Result<()> {
+    pub async fn process_proof_request_status(&self, request: OPZisKRequest) -> Result<()> {
         // ZisK generates proofs synchronously, so if status is "Prove", the proof should already be complete
         // Check if proof exists in database
         if request.proof.is_some() {
@@ -543,7 +543,7 @@ where
 
             // Create an aggregation proof request to cover the range with the checkpointed L1 block
             // hash.
-            let agg_request = OPSuccinctRequest::new_agg_request(
+            let agg_request = OPZisKRequest::new_agg_request(
                 if self.requester_config.mock { RequestMode::Mock } else { RequestMode::Real },
                 latest_proposed_block_number,
                 highest_proven_contiguous_block_number,
@@ -648,7 +648,7 @@ where
     /// If there is an Aggregation proof with the same start block, range vkey commitment, and
     /// aggregation vkey, return that. Otherwise, return a range proof with the lowest start
     /// block.
-    async fn get_next_unrequested_proof(&self) -> Result<Option<OPSuccinctRequest>> {
+    async fn get_next_unrequested_proof(&self) -> Result<Option<OPZisKRequest>> {
         let latest_proposed_block_number = get_latest_proposed_block_number(
             self.contract_config.l2oo_address,
             self.driver_config.fetcher.as_ref(),
@@ -725,8 +725,8 @@ where
     /// 3. The range proofs cover the entire block range
     pub async fn validate_aggregation_request(
         &self,
-        range_proofs: &[OPSuccinctRequest],
-        agg_request: &OPSuccinctRequest,
+        range_proofs: &[OPZisKRequest],
+        agg_request: &OPZisKRequest,
     ) -> bool {
         debug!(
             "Validating aggregation proof request: start_block={}, end_block={}",
@@ -875,7 +875,7 @@ where
     /// with the proof. Otherwise, propose the L2 output.
     async fn relay_aggregation_proof(
         &self,
-        completed_agg_proof: &OPSuccinctRequest,
+        completed_agg_proof: &OPZisKRequest,
     ) -> Result<B256> {
         // Get the output at the end block of the last completed aggregation proof.
         let output = self
@@ -889,13 +889,13 @@ where
         // resolves the game. Otherwise, propose the L2 output.
         let receipt = if self.contract_config.dgf_address != Address::ZERO {
             // Validity game type: https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/src/dispute/lib/Types.sol#L64.
-            const OP_SUCCINCT_VALIDITY_DISPUTE_GAME_TYPE: u32 = 6;
+            const OP_ZISK_VALIDITY_DISPUTE_GAME_TYPE: u32 = 6;
 
             // Get the initialization bond for the validity dispute game.
             let init_bond = self
                 .contract_config
                 .dgf_contract
-                .initBonds(OP_SUCCINCT_VALIDITY_DISPUTE_GAME_TYPE)
+                .initBonds(OP_ZISK_VALIDITY_DISPUTE_GAME_TYPE)
                 .call()
                 .await?;
 
@@ -958,9 +958,9 @@ where
         let config_name = self.requester_config.op_zisk_config_name_hash;
 
         let contract_config =
-            self.contract_config.l2oo_contract.opSuccinctConfigs(config_name).call().await?;
+            self.contract_config.l2oo_contract.opZiskConfigs(config_name).call().await?;
 
-        // Extract the OpSuccinctConfig fields with meaningful names.
+        // Extract the OpZiskConfig fields with meaningful names.
         let contract_agg_vkey_hash = contract_config.aggregation_vkey();
         let contract_range_vkey_commitment = contract_config.range_vkey_commitment();
         let contract_rollup_config_hash = contract_config.rollup_config_hash();

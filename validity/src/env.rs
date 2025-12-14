@@ -101,12 +101,12 @@ pub async fn read_proposer_env() -> Result<EnvironmentConfig> {
         max_concurrent_witness_gen: get_env_var("MAX_CONCURRENT_WITNESS_GEN", Some(1))?,
         max_concurrent_proof_requests: get_env_var("MAX_CONCURRENT_PROOF_REQUESTS", Some(1))?,
         submission_interval: get_env_var("SUBMISSION_INTERVAL", Some(1800))?,
-        mock: get_env_var("OP_SUCCINCT_MOCK", Some(false))?,
+        mock: get_env_var("OP_ZISK_MOCK", Some(false))?,
         loop_interval,
         safe_db_fallback: get_env_var("SAFE_DB_FALLBACK", Some(false))?,
         op_zisk_config_name: get_env_var(
-            "OP_SUCCINCT_CONFIG_NAME",
-            Some("opsuccinct_genesis".to_string()),
+            "OP_ZISK_CONFIG_NAME",
+            Some("opzisk_genesis".to_string()),
         )?,
         use_kms_requester: get_env_var("USE_KMS_REQUESTER", Some(false))?,
         max_price_per_pgu: get_env_var("MAX_PRICE_PER_PGU", Some(300_000_000))?, /* 0.3 PROVE per billion PGU */

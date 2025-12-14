@@ -11,7 +11,7 @@ use alloy_transport_http::reqwest::Url;
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use fault_proof::{
-    contract::{DisputeGameFactory, OPSuccinctFaultDisputeGame, ProposalStatus},
+    contract::{DisputeGameFactory, OPZisKFaultDisputeGame, ProposalStatus},
     FactoryTrait,
 };
 use op_zisk_client_utils::boot::BootInfoStruct;
@@ -19,7 +19,7 @@ use op_zisk_elfs::AGGREGATION_ELF;
 use op_zisk_host_utils::{
     fetcher::OPZisKDataFetcher,
     get_agg_proof_stdin,
-    host::OPSuccinctHost,
+    host::OPZisKHost,
     network::{determine_network_mode, get_network_signer, parse_fulfillment_strategy},
     witness_generation::WitnessGenerator,
 };
@@ -343,7 +343,7 @@ async fn main() -> Result<()> {
     let game_address = game_info.proxy;
     info!("Game address: {}", game_address);
 
-    let game = OPSuccinctFaultDisputeGame::new(game_address, provider_with_signer.clone());
+    let game = OPZisKFaultDisputeGame::new(game_address, provider_with_signer.clone());
 
     // Debug: Check what the game expects
     let game_l1_head = game.l1Head().call().await?;
