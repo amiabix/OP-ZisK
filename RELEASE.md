@@ -1,10 +1,10 @@
 # Release Process
 
-This document describes the release process for op-succinct.
+This document describes the release process for OP-ZisK.
 
 ## Versioning
 
-op-succinct follows [Semantic Versioning](https://semver.org/):
+OP-ZisK follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR**: Breaking changes to contracts, APIs, or configuration
 - **MINOR**: New features, backward-compatible changes
@@ -64,7 +64,7 @@ git push origin vX.Y.Z
 
 ### 5. Create GitHub Release
 
-1. Go to [Releases](https://github.com/succinctlabs/op-succinct/releases)
+1. Go to [Releases](https://github.com/amiabix/OP-ZisK/releases)
 2. Click "Draft a new release"
 3. Select the tag `vX.Y.Z`
 4. Click "Generate release notes" for auto-generated changelog
@@ -76,15 +76,15 @@ git push origin vX.Y.Z
 When a tag is pushed:
 
 **Validity Mode (OP-ZisK)**:
-- `ghcr.io/succinctlabs/op-succinct/op-succinct:vX.Y.Z`
-- `ghcr.io/succinctlabs/op-succinct/op-succinct-celestia:vX.Y.Z`
-- `ghcr.io/succinctlabs/op-succinct/op-succinct-eigenda:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/op-zisk:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/op-zisk-celestia:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/op-zisk-eigenda:vX.Y.Z`
 
 **Fault Proof Mode (OP-ZisK Lite)**:
-- `ghcr.io/succinctlabs/op-succinct/lite-proposer:vX.Y.Z`
-- `ghcr.io/succinctlabs/op-succinct/lite-proposer-celestia:vX.Y.Z`
-- `ghcr.io/succinctlabs/op-succinct/lite-proposer-eigenda:vX.Y.Z`
-- `ghcr.io/succinctlabs/op-succinct/lite-challenger:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/lite-proposer:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/lite-proposer-celestia:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/lite-proposer-eigenda:vX.Y.Z`
+- `ghcr.io/amiabix/op-zisk/lite-challenger:vX.Y.Z`
 
 ## Release Candidates
 
@@ -99,4 +99,4 @@ Mark the GitHub release as "pre-release".
 
 ## Changelog
 
-See [GitHub Releases](https://github.com/succinctlabs/op-succinct/releases) for the full changelog.
+See [GitHub Releases](https://github.com/amiabix/OP-ZisK/releases) for the full changelog.

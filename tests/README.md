@@ -1,6 +1,6 @@
 # E2E Tests
 
-This directory hosts the end-to-end tests for `op-succinct`, built on top of
+This directory hosts the end-to-end tests for OP-ZisK, built on top of
 Optimism's devstack. Use the `justfile` here to prepare contract artifacts and
 run the suite with the expected environment.
 
@@ -11,7 +11,7 @@ run the suite with the expected environment.
   `artifacts/compressed/artifacts.tzst` and is unpacked into `artifacts/src`
   before tests.
 - `optimism/`: Vendored `succinctlabs/optimism` repository using
-  `op-succinct-sysgo` branch, which contains `op-succinct` integration code with
+  `op-succinct-sysgo` branch, which contains OP-ZisK integration code with
   Optimism devstack.
 - `bindings/`, `presets/`, `utils/`: Presets, helpers and generated code used by
   the tests.
@@ -69,11 +69,11 @@ run the suite with the expected environment.
 
 - `tests/optimism` is a git submodule that pins the
   `succinctlabs/optimism` fork on the `op-succinct-sysgo` branch, which carries
-  Succinct-specific devstack changes. Rebase that branch onto
+  devstack changes from the upstream Succinct project. Rebase that branch onto
   `ethereum-optimism/optimism` (`develop` branch) whenever we need upstream fixes,
   new OP Stack features, or contract updates that affect the e2e suite.
 - Changes to the fork should land via PRs into `succinctlabs/optimism` targeting
-  `op-succinct-sysgo`.
+  `op-succinct-sysgo` (maintained by the upstream Succinct project).
 - After merging fork updates, advance the `tests/optimism` submodule to the new
   commit, run `go mod tidy` in `tests` if dependencies changed, regenerate
   artifacts with `just update-packages`, and rerun tests to confirm the vendored

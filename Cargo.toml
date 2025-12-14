@@ -28,8 +28,8 @@ resolver = "2"
 license = "MIT"
 edition = "2021"
 authors = ["ratankaliani", "zachobront", "fakedev9999", "yuwen01"]
-homepage = "https://succinctlabs.github.io/op-succinct/"
-repository = "https://github.com/succinctlabs/op-succinct"
+homepage = "https://github.com/amiabix/OP-ZisK"
+repository = "https://github.com/amiabix/OP-ZisK"
 version = "3.4.0"
 
 [workspace.dependencies]
