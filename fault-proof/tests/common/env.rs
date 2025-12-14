@@ -13,20 +13,20 @@ use alloy_signer_local::PrivateKeySigner;
 use alloy_sol_types::{SolCall, SolValue};
 use alloy_transport_http::reqwest::Url;
 use anyhow::Result;
-use op_succinct_bindings::{
+use op_zisk_bindings::{
     anchor_state_registry::AnchorStateRegistry::{self, AnchorStateRegistryInstance},
     dispute_game_factory::DisputeGameFactory::{self, DisputeGameFactoryInstance},
     mock_optimism_portal2::MockOptimismPortal2::{self, MockOptimismPortal2Instance},
-    op_succinct_fault_dispute_game::OPSuccinctFaultDisputeGame::{
+    op_zisk_fault_dispute_game::OPSuccinctFaultDisputeGame::{
         self, OPSuccinctFaultDisputeGameInstance,
     },
 };
-use op_succinct_host_utils::{
-    fetcher::{get_rpcs_from_env, OPSuccinctDataFetcher, RPCConfig},
+use op_zisk_host_utils::{
+    fetcher::{get_rpcs_from_env, OPZisKDataFetcher, RPCConfig},
     host::OPSuccinctHost,
     OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH,
 };
-use op_succinct_signer_utils::{Signer, SignerLock};
+use op_zisk_signer_utils::{Signer, SignerLock};
 use tokio::task::JoinHandle;
 use tracing::{info, Level};
 
@@ -61,7 +61,7 @@ pub struct TestEnvironment {
     /// RPC configuration
     pub rpc_config: RPCConfig,
     /// Data fetcher
-    pub fetcher: OPSuccinctDataFetcher,
+    pub fetcher: OPZisKDataFetcher,
     /// Anvil fork
     pub anvil: AnvilFork,
     /// Deployed contracts
@@ -110,7 +110,7 @@ impl TestEnvironment {
         // Get environment variables
         let mut rpc_config = get_rpcs_from_env();
 
-        let fetcher = OPSuccinctDataFetcher::new();
+        let fetcher = OPZisKDataFetcher::new();
 
         // Setup fresh Anvil chain
         let anvil = setup_anvil_chain().await?;
@@ -150,7 +150,7 @@ impl TestEnvironment {
         init_logging();
 
         let mut rpc_config = get_rpcs_from_env();
-        let fetcher = OPSuccinctDataFetcher::new();
+        let fetcher = OPZisKDataFetcher::new();
 
         // Setup anvil chain - gets actual L2 finalized block
         let anvil = setup_anvil_chain().await?;
@@ -520,12 +520,12 @@ pub fn init_logging() {
             ("e2e", level),
             ("sync", level),
             ("fault_proof", level),
-            ("op_succinct_fp", level),
-            ("op_succinct_client_utils", level),
-            ("op_succinct_ethereum_host_utils", level),
-            ("op_succinct_host_utils", level),
-            ("op_succinct_proof_utils", level),
-            ("op_succinct_signer_utils", level),
+            ("op_zisk_fp", level),
+            ("op_zisk_client_utils", level),
+            ("op_zisk_ethereum_host_utils", level),
+            ("op_zisk_host_utils", level),
+            ("op_zisk_proof_utils", level),
+            ("op_zisk_signer_utils", level),
         ]);
 
         tracing_subscriber::registry().with(fmt::layer().compact()).with(filter).init()

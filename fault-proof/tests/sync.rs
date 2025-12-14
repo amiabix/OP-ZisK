@@ -1,3 +1,4 @@
+#[cfg(feature = "integration")]
 pub mod common;
 
 #[cfg(feature = "integration")]
@@ -20,8 +21,8 @@ mod sync {
             Game, GameFetchResult, OPSuccinctProposer, ProposerStateSnapshot, MAX_GAME_DEADLINE_LAG,
         },
     };
-    use op_succinct_bindings::dispute_game_factory::DisputeGameFactory;
-    use op_succinct_host_utils::host::OPSuccinctHost;
+    use op_zisk_bindings::dispute_game_factory::DisputeGameFactory;
+    use op_zisk_host_utils::host::OPSuccinctHost;
     use rand::Rng;
     use rstest::rstest;
 
@@ -1386,4 +1387,10 @@ mod sync {
 
         Ok(())
     }
+}
+
+#[cfg(not(feature = "integration"))]
+#[test]
+fn sync_tests_disabled() {
+    // Sync tests require `--features integration` and contract dependencies / bindings.
 }

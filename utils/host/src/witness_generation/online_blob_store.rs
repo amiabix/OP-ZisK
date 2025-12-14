@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use kona_derive::BlobProvider;
 use kona_protocol::BlockInfo;
 use kzg_rs::{Blob as KzgRsBlob, Bytes48};
-use op_succinct_client_utils::witness::BlobData;
+use op_zisk_client_utils::witness::BlobData;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]

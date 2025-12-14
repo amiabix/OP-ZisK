@@ -1,17 +1,17 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use op_succinct_host_utils::{
-    block_range::get_validated_block_range, fetcher::OPSuccinctDataFetcher, host::OPSuccinctHost,
+use op_zisk_host_utils::{
+    block_range::get_validated_block_range, fetcher::OPZisKDataFetcher, host::OPSuccinctHost,
     stats::ExecutionStats, witness_generation::WitnessGenerator,
 };
-use op_succinct_proof_utils::{get_range_elf_embedded, initialize_host};
-use op_succinct_prove::{execute_multi, DEFAULT_RANGE};
-use op_succinct_scripts::HostExecutorArgs;
+use op_zisk_proof_utils::{get_range_elf_embedded, initialize_host};
+use op_zisk_prove::{execute_multi, DEFAULT_RANGE};
+use op_zisk_scripts::HostExecutorArgs;
 use sp1_sdk::{utils, ProverClient};
 use std::{fs, sync::Arc, time::Instant};
 use tracing::debug;
 
-/// Execute the OP Succinct program for multiple blocks.
+/// Execute the OP-ZisK program for multiple blocks.
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = HostExecutorArgs::parse();
@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
         .context(format!("Environment file not found: {}", args.env_file.display()))?;
     utils::setup_logger();
 
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
 
     let host = initialize_host(Arc::new(data_fetcher.clone()));
 

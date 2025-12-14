@@ -6,12 +6,12 @@ use alloy_primitives::B256;
 use anyhow::Result;
 use async_trait::async_trait;
 use kona_host::single::SingleChainHost;
-use op_succinct_ethereum_client_utils::executor::ETHDAWitnessExecutor;
-use op_succinct_host_utils::{fetcher::OPSuccinctDataFetcher, host::OPSuccinctHost};
+use op_zisk_ethereum_client_utils::executor::ETHDAWitnessExecutor;
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
 
 #[derive(Clone)]
 pub struct SingleChainOPSuccinctHost {
-    pub fetcher: Arc<OPSuccinctDataFetcher>,
+    pub fetcher: Arc<OPZisKDataFetcher>,
     witness_generator: Arc<ETHDAWitnessGenerator>,
 }
 
@@ -49,7 +49,7 @@ impl OPSuccinctHost for SingleChainOPSuccinctHost {
 
     async fn get_finalized_l2_block_number(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         _: u64,
     ) -> Result<Option<u64>> {
         let finalized_l2_block_number = fetcher.get_l2_header(BlockId::finalized()).await?;
@@ -58,7 +58,7 @@ impl OPSuccinctHost for SingleChainOPSuccinctHost {
 
     async fn calculate_safe_l1_head(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         l2_end_block: u64,
         safe_db_fallback: bool,
     ) -> Result<B256> {
@@ -79,7 +79,7 @@ impl OPSuccinctHost for SingleChainOPSuccinctHost {
 }
 
 impl SingleChainOPSuccinctHost {
-    pub fn new(fetcher: Arc<OPSuccinctDataFetcher>) -> Self {
+    pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self {
             fetcher,
             witness_generator: Arc::new(ETHDAWitnessGenerator {

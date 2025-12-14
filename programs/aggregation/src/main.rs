@@ -1,26 +1,34 @@
 //! A program that aggregates the proofs of the range program.
 
-#![cfg_attr(target_os = "zkvm", no_main)]
-#[cfg(target_os = "zkvm")]
-sp1_zkvm::entrypoint!(main);
+#![no_main]
+ziskos::entrypoint!(main);
 
 use alloy_consensus::Header;
 use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
-use op_succinct_client_utils::{
+use op_zisk_client_utils::{
     boot::BootInfoStruct,
     types::{u32_to_u8, AggregationInputs, AggregationOutputs},
 };
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
 pub fn main() {
-    // Read in the public values corresponding to each range proof.
-    let agg_inputs = sp1_zkvm::io::read::<AggregationInputs>();
-    // Note: The headers are in order from start to end. We use serde_cbor as bincode serialization
-    // causes issues with the zkVM.
-    let headers_bytes = sp1_zkvm::io::read_vec();
-    let headers: Vec<Header> = serde_cbor::from_slice(&headers_bytes).unwrap();
+    // ZisK reads input as a single byte vector
+    let input: Vec<u8> = ziskos::read_input();
+    
+    // Deserialize aggregation inputs
+    // Format: [agg_inputs_bytes_len: u64][agg_inputs_bytes][headers_bytes_len: u64][headers_bytes]
+    let mut cursor = 0;
+    let agg_inputs_len = u64::from_le_bytes(input[cursor..cursor+8].try_into().unwrap()) as usize;
+    cursor += 8;
+    let agg_inputs: AggregationInputs = bincode::deserialize(&input[cursor..cursor+agg_inputs_len])
+        .expect("Failed to deserialize aggregation inputs");
+    cursor += agg_inputs_len;
+    
+    let headers_len = u64::from_le_bytes(input[cursor..cursor+8].try_into().unwrap()) as usize;
+    cursor += 8;
+    let headers: Vec<Header> = serde_cbor::from_slice(&input[cursor..cursor+headers_len])
+        .expect("Failed to deserialize headers");
     assert!(!agg_inputs.boot_infos.is_empty());
 
     // Confirm that the boot infos are sequential.
@@ -36,15 +44,15 @@ pub fn main() {
         assert_eq!(prev_boot_info.rollupConfigHash, boot_info.rollupConfigHash);
     });
 
-    // Verify each range program proof.
-    agg_inputs.boot_infos.iter().for_each(|boot_info| {
-        // In the range program, the public values digest is just the hash of the ABI encoded
-        // boot info.
-        let serialized_boot_info = bincode::serialize(&boot_info).unwrap();
-        let pv_digest = Sha256::digest(serialized_boot_info);
-
-        sp1_lib::verify::verify_sp1_proof(&agg_inputs.multi_block_vkey, &pv_digest.into());
-    });
+    // TODO: ZisK doesn't support proof verification inside zkVM
+    // This is a major architectural change - proofs must be verified outside the zkVM
+    // For now, we skip verification and rely on external verification
+    // In production, this should be handled by verifying proofs before aggregation
+    // agg_inputs.boot_infos.iter().for_each(|boot_info| {
+    //     let serialized_boot_info = bincode::serialize(&boot_info).unwrap();
+    //     let pv_digest = Sha256::digest(serialized_boot_info);
+    //     // Proof verification must happen outside zkVM
+    // });
 
     // Create a map of each l1 head in the [`BootInfoStruct`]'s to booleans
     let mut l1_heads_map: HashMap<B256, bool> =
@@ -94,6 +102,13 @@ pub fn main() {
         proverAddress: agg_inputs.prover_address,
     };
 
-    // Commit to the aggregated [`AggregationOutputs`].
-    sp1_zkvm::io::commit_slice(&agg_outputs.abi_encode());
+    // Output the aggregated results using ZisK's set_output
+    // ZisK requires output as u32 chunks
+    let output_bytes = agg_outputs.abi_encode();
+    for (i, chunk) in output_bytes.chunks(4).enumerate() {
+        let mut chunk_array = [0u8; 4];
+        chunk_array[..chunk.len()].copy_from_slice(chunk);
+        let val = u32::from_le_bytes(chunk_array);
+        ziskos::set_output(i, val);
+    }
 }

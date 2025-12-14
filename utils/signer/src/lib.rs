@@ -228,7 +228,7 @@ impl SignerLock {
 mod tests {
     use alloy_eips::BlockId;
     use alloy_primitives::{address, U256};
-    use op_succinct_host_utils::OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract;
+    use op_zisk_host_utils::OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract;
 
     use super::*;
 

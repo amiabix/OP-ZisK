@@ -1,7 +1,7 @@
 use alloy_primitives::{Address, B256};
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime};
-use op_succinct_host_utils::fetcher::{BlockInfo, OPSuccinctDataFetcher};
+use op_zisk_host_utils::fetcher::{BlockInfo, OPZisKDataFetcher};
 use serde_json::Value;
 use sqlx::{types::BigDecimal, FromRow, PgPool};
 use std::{fmt::Debug, sync::Arc};
@@ -120,7 +120,7 @@ impl OPSuccinctRequest {
         rollup_config_hash: B256,
         l1_chain_id: i64,
         l2_chain_id: i64,
-        fetcher: Arc<OPSuccinctDataFetcher>,
+        fetcher: Arc<OPZisKDataFetcher>,
     ) -> Result<Self> {
         let block_data =
             fetcher.get_l2_block_data_range(start_block as u64, end_block as u64).await?;

@@ -75,12 +75,12 @@ git push origin vX.Y.Z
 
 When a tag is pushed:
 
-**Validity Mode (OP Succinct)**:
+**Validity Mode (OP-ZisK)**:
 - `ghcr.io/succinctlabs/op-succinct/op-succinct:vX.Y.Z`
 - `ghcr.io/succinctlabs/op-succinct/op-succinct-celestia:vX.Y.Z`
 - `ghcr.io/succinctlabs/op-succinct/op-succinct-eigenda:vX.Y.Z`
 
-**Fault Proof Mode (OP Succinct Lite)**:
+**Fault Proof Mode (OP-ZisK Lite)**:
 - `ghcr.io/succinctlabs/op-succinct/lite-proposer:vX.Y.Z`
 - `ghcr.io/succinctlabs/op-succinct/lite-proposer-celestia:vX.Y.Z`
 - `ghcr.io/succinctlabs/op-succinct/lite-proposer-eigenda:vX.Y.Z`

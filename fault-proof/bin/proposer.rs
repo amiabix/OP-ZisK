@@ -9,13 +9,13 @@ use fault_proof::{
     config::ProposerConfig, contract::DisputeGameFactory, prometheus::ProposerGauge,
     proposer::OPSuccinctProposer,
 };
-use op_succinct_host_utils::{
-    fetcher::OPSuccinctDataFetcher,
+use op_zisk_host_utils::{
+    fetcher::OPZisKDataFetcher,
     metrics::{init_metrics, MetricsGauge},
     setup_logger,
 };
-use op_succinct_proof_utils::initialize_host;
-use op_succinct_signer_utils::SignerLock;
+use op_zisk_proof_utils::initialize_host;
+use op_zisk_signer_utils::SignerLock;
 use tikv_jemallocator::Jemalloc;
 
 #[global_allocator]
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
         l1_provider.clone(),
     );
 
-    let fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
     let host = initialize_host(Arc::new(fetcher.clone()));
 
     let proposer = Arc::new(

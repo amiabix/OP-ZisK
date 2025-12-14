@@ -6,9 +6,9 @@ use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use anyhow::Result;
 use fault_proof::contract::{GameStatus, ProposalStatus};
-use op_succinct_bindings::{
+use op_zisk_bindings::{
     dispute_game_factory::DisputeGameFactory,
-    op_succinct_fault_dispute_game::OPSuccinctFaultDisputeGame,
+    op_zisk_fault_dispute_game::OPSuccinctFaultDisputeGame,
 };
 use tokio::time::{sleep, Instant};
 use tracing::info;

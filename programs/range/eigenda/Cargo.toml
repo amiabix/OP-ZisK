@@ -18,20 +18,22 @@ kona-proof.workspace = true
 # hokulea
 hokulea-proof.workspace = true
 hokulea-zkvm-verification.workspace = true
-canoe-sp1-cc-verifier.workspace = true
+# canoe
+# ZisK Migration: Do not use SP1-specific Canoe verifier.
+# We retain the generic Canoe traits + address fetcher (and can use no-op implementations for testing).
+canoe-verifier.workspace = true
 canoe-verifier-address-fetcher.workspace = true
 
-# sp1
-sp1-zkvm.workspace = true
+# zisk
+ziskos.workspace = true
 
-# op-succinct
-op-succinct-client-utils.workspace = true
-op-succinct-eigenda-client-utils.workspace = true
-op-succinct-range-utils.workspace = true
+# op-zisk
+op-zisk-client-utils.workspace = true
+op-zisk-eigenda-client-utils.workspace = true
+op-zisk-range-utils.workspace = true
 
 # `tracing-subscriber` feature dependencies
 tracing-subscriber = { workspace = true, optional = true }
 
 [features]
-embedded = ["sp1-zkvm/embedded"]
 tracing-subscriber = ["dep:tracing-subscriber"]

@@ -13,22 +13,18 @@ use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_sol_types::{SolEvent, SolValue};
 use anyhow::{bail, Context, Result};
 use futures::stream::{self, StreamExt, TryStreamExt};
-use op_succinct_client_utils::boot::BootInfoStruct;
-use op_succinct_elfs::AGGREGATION_ELF;
-use op_succinct_host_utils::{
-    fetcher::OPSuccinctDataFetcher,
+use op_zisk_client_utils::boot::BootInfoStruct;
+use op_zisk_host_utils::{
+    fetcher::OPZisKDataFetcher,
     get_agg_proof_stdin,
     host::OPSuccinctHost,
     metrics::MetricsGauge,
-    network::{determine_network_mode, get_network_signer},
     witness_generation::WitnessGenerator,
 };
-use op_succinct_proof_utils::get_range_elf_embedded;
-use op_succinct_signer_utils::SignerLock;
-use sp1_sdk::{
-    NetworkProver, Prover, ProverClient, SP1ProofMode, SP1ProofWithPublicValues, SP1ProvingKey,
-    SP1Stdin, SP1VerifyingKey, SP1_CIRCUIT_VERSION,
-};
+use op_zisk_signer_utils::SignerLock;
+use zisk_sdk::ProverClientBuilder;
+use zisk_common::io::ZiskStdin;
+use std::path::PathBuf;
 use tokio::{
     sync::{Mutex, RwLock},
     time,
@@ -75,12 +71,13 @@ pub enum TaskInfo {
 }
 
 #[derive(Clone)]
-struct SP1Prover {
-    network_prover: Arc<NetworkProver>,
-    range_pk: Arc<SP1ProvingKey>,
-    range_vk: Arc<SP1VerifyingKey>,
-    agg_pk: Arc<SP1ProvingKey>,
-    agg_mode: SP1ProofMode,
+struct ZiskProver {
+    range_elf_path: PathBuf,
+    agg_elf_path: PathBuf,
+    range_proving_key_path: PathBuf,
+    agg_proving_key_path: PathBuf,
+    output_dir: PathBuf,
+    range_vkey_commitment: B256, // For aggregation stdin
 }
 
 /// Represents a dispute game in the on-chain game DAG.
@@ -176,8 +173,8 @@ where
     pub factory: Arc<DisputeGameFactoryInstance<P>>,
     pub init_bond: U256,
     pub safe_db_fallback: bool,
-    prover: SP1Prover,
-    fetcher: Arc<OPSuccinctDataFetcher>,
+    prover: ZiskProver,
+    fetcher: Arc<OPZisKDataFetcher>,
     host: Arc<H>,
     tasks: Arc<Mutex<TaskMap>>,
     next_task_id: Arc<AtomicU64>,
@@ -195,18 +192,35 @@ where
         config: ProposerConfig,
         signer: SignerLock,
         factory: DisputeGameFactoryInstance<P>,
-        fetcher: Arc<OPSuccinctDataFetcher>,
+        fetcher: Arc<OPZisKDataFetcher>,
         host: Arc<H>,
     ) -> Result<Self> {
-        // Set up the network prover.
-        let network_signer = get_network_signer(config.use_kms_requester).await?;
-        let network_mode =
-            determine_network_mode(config.range_proof_strategy, config.agg_proof_strategy)?;
-        let network_prover = Arc::new(
-            ProverClient::builder().network_for(network_mode).signer(network_signer).build(),
-        );
-        let (range_pk, range_vk) = network_prover.setup(get_range_elf_embedded());
-        let (agg_pk, _) = network_prover.setup(AGGREGATION_ELF);
+        // Set up ZisK prover with file paths
+        let range_elf_path = std::env::var("RANGE_ELF_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("target/riscv64ima-zisk-zkvm-elf/release/range"));
+        let agg_elf_path = std::env::var("AGG_ELF_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("target/riscv64ima-zisk-zkvm-elf/release/aggregation"));
+        let range_proving_key_path = std::env::var("RANGE_PROVING_KEY_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| "~".to_string());
+                PathBuf::from(format!("{}/.zisk/provingKey", home))
+            });
+        let agg_proving_key_path = std::env::var("AGG_PROVING_KEY_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| "~".to_string());
+                PathBuf::from(format!("{}/.zisk/provingKey", home))
+            });
+        let output_dir = std::env::var("PROOF_OUTPUT_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("tmp"));
+        
+        // TODO: Load range_vkey_commitment from proving key or config
+        // For now, use a placeholder - this should be loaded from the proving key
+        let range_vkey_commitment = B256::ZERO;
 
         let l1_provider = ProviderBuilder::default().connect_http(config.l1_rpc.clone());
         let l2_provider = ProviderBuilder::default().connect_http(config.l2_rpc.clone());
@@ -229,12 +243,13 @@ where
             factory: Arc::new(factory.clone()),
             init_bond,
             safe_db_fallback: config.safe_db_fallback,
-            prover: SP1Prover {
-                network_prover,
-                range_pk: Arc::new(range_pk),
-                range_vk: Arc::new(range_vk),
-                agg_pk: Arc::new(agg_pk),
-                agg_mode: config.agg_proof_mode,
+            prover: ZiskProver {
+                range_elf_path,
+                agg_elf_path,
+                range_proving_key_path,
+                agg_proving_key_path,
+                output_dir,
+                range_vkey_commitment,
             },
             fetcher: fetcher.clone(),
             host,
@@ -248,7 +263,7 @@ where
         anchor_l2_block: U256,
         config: &ProposerConfig,
         host: &H,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
     ) -> Result<()> {
         let finalized_l2_block = host
             .get_finalized_l2_block_number(fetcher, anchor_l2_block.to::<u64>())
@@ -297,7 +312,7 @@ where
 
     /// Runs the proposer indefinitely.
     pub async fn run(self: Arc<Self>) -> Result<()> {
-        tracing::info!("OP Succinct Proposer running...");
+        tracing::info!("OP-ZisK Proposer running...");
         let mut interval = time::interval(Duration::from_secs(self.config.fetch_interval));
 
         // Spawn a dedicated task for continuous metrics collection
@@ -712,12 +727,12 @@ where
     pub async fn prove_game(
         &self,
         game_address: Address,
-        start_block: u64,
+        _start_block: u64,
         end_block: u64,
     ) -> Result<(TxHash, u64, u64)> {
         tracing::info!("Attempting to prove game {:?}", game_address);
 
-        let fetcher = match OPSuccinctDataFetcher::new_with_rollup_config().await {
+        let fetcher = match OPZisKDataFetcher::new_with_rollup_config().await {
             Ok(f) => f,
             Err(e) => {
                 tracing::error!("Failed to create data fetcher: {}", e);
@@ -732,7 +747,7 @@ where
         let ranges = self
             .config
             .range_split_count
-            .split(start_block, end_block)
+            .split(_start_block, end_block)
             .context("failed to split range for proving")?;
         let num_ranges = ranges.len();
         tracing::info!("Proving over {num_ranges} ranges");
@@ -741,36 +756,28 @@ where
             let this = self.clone();
             async move {
                 tracing::info!("Generating Range Proof for blocks {start} to {end}");
-                let sp1_stdin = this.range_proof_stdin(start, end, l1_head_hash.into()).await?;
-                let (range_proof, inst_cycles, sp1_gas) =
-                    this.range_proof_request(&sp1_stdin).await?;
-                Ok::<_, anyhow::Error>((idx, range_proof, inst_cycles, sp1_gas))
+                let zisk_stdin = this.range_proof_stdin(start, end, l1_head_hash.into()).await?;
+                let (range_proof_bytes, boot_info, inst_cycles) =
+                    this.range_proof_request(zisk_stdin, start, end).await?;
+                Ok::<_, anyhow::Error>((idx, range_proof_bytes, boot_info, inst_cycles))
             }
         });
 
         let max_concurrent = self.config.max_concurrent_range_proofs.get().min(num_ranges);
         let prove_stream = stream::iter(tasks);
-        let results: Vec<(usize, SP1ProofWithPublicValues, u64, u64)> =
+        let results: Vec<(usize, Vec<u8>, BootInfoStruct, u64)> =
             prove_stream.buffer_unordered(max_concurrent).try_collect().await?;
 
         let mut proofs = vec![None; num_ranges];
         let mut boot_infos = vec![None; num_ranges];
         let mut total_instruction_cycles: u64 = 0;
-        let mut total_sp1_gas: u64 = 0;
 
-        for (idx, range_proof, inst_cycles, sp1_gas) in results {
-            let proof = range_proof.proof.clone();
-            let mut public_values = range_proof.public_values.clone();
-            let boot_info: BootInfoStruct = public_values.read();
-
-            proofs[idx] = Some(proof);
+        for (idx, proof_bytes, boot_info, inst_cycles) in results {
+            proofs[idx] = Some(proof_bytes);
             boot_infos[idx] = Some(boot_info);
             total_instruction_cycles = total_instruction_cycles
                 .checked_add(inst_cycles)
                 .ok_or_else(|| anyhow::anyhow!("Instruction cycles overflow"))?;
-            total_sp1_gas = total_sp1_gas
-                .checked_add(sp1_gas)
-                .ok_or_else(|| anyhow::anyhow!("SP1 gas overflow"))?;
         }
 
         let proofs = proofs
@@ -800,11 +807,18 @@ where
         };
 
         tracing::info!("Preparing Stdin for Agg Proof");
-        let sp1_stdin = match get_agg_proof_stdin(
+        // Convert range vkey commitment to u32 array format
+        let range_vkey_commitment = self.prover.range_vkey_commitment;
+        let mut range_vkey_u32 = [0u32; 8];
+        for (i, chunk) in range_vkey_commitment.as_slice().chunks(4).enumerate().take(8) {
+            range_vkey_u32[i] = u32::from_le_bytes(chunk.try_into().unwrap());
+        }
+        
+        let zisk_stdin = match get_agg_proof_stdin(
             proofs,
             boot_infos,
             headers,
-            &self.prover.range_vk,
+            range_vkey_u32,
             latest_l1_head,
             self.signer.address(),
         ) {
@@ -815,9 +829,9 @@ where
             }
         };
 
-        let tx_hash = self.agg_proof_request(&game, &sp1_stdin).await?;
+        let tx_hash = self.agg_proof_request(&game, zisk_stdin).await?;
 
-        Ok((tx_hash, total_instruction_cycles, total_sp1_gas))
+        Ok((tx_hash, total_instruction_cycles, 0)) // ZisK doesn't have SP1 gas
     }
 
     async fn range_proof_stdin(
@@ -825,7 +839,7 @@ where
         start_block: u64,
         end_block: u64,
         l1_head_hash: B256,
-    ) -> Result<SP1Stdin> {
+    ) -> Result<ZiskStdin> {
         let host_args = self
             .host
             .fetch(start_block, end_block, Some(l1_head_hash), self.config.safe_db_fallback)
@@ -834,7 +848,7 @@ where
 
         let witness_data = self.host.run(&host_args).await?;
 
-        let sp1_stdin = match self.host.witness_generator().get_sp1_stdin(witness_data) {
+        let zisk_stdin = match self.host.witness_generator().get_zisk_stdin(witness_data) {
             Ok(stdin) => stdin,
             Err(e) => {
                 tracing::error!("Failed to get proof stdin: {}", e);
@@ -842,107 +856,96 @@ where
             }
         };
 
-        Ok(sp1_stdin)
+        Ok(zisk_stdin)
     }
 
     async fn range_proof_request(
         &self,
-        sp1_stdin: &SP1Stdin,
-    ) -> Result<(SP1ProofWithPublicValues, u64, u64)> {
-        if self.config.mock_mode {
-            tracing::info!("Using mock mode for range proof generation");
-            let (public_values, report) = self
-                .prover
-                .network_prover
-                .execute(get_range_elf_embedded(), sp1_stdin)
-                .calculate_gas(true)
-                .deferred_proof_verification(false)
-                .run()?;
+        zisk_stdin: ZiskStdin,
+        _start_block: u64,
+        end_block: u64,
+    ) -> Result<(Vec<u8>, BootInfoStruct, u64)> {
+        // Build ZisK prover for range proof
+        let prover = ProverClientBuilder::new()
+            .emu()
+            .prove()
+            .elf_path(self.prover.range_elf_path.clone())
+            .proving_key_path(self.prover.range_proving_key_path.clone())
+            .save_proofs(true)
+            .output_dir(self.prover.output_dir.clone())
+            .verify_proofs(true)
+            .aggregation(true)
+            .build()
+            .map_err(|e| anyhow::anyhow!("Failed to build ZisK prover: {}", e))?;
 
-            // Record execution stats
-            let total_instruction_cycles = report.total_instruction_count();
-            let total_sp1_gas = report.gas.unwrap_or(0);
+        // Generate proof
+        let result = tokio::task::spawn_blocking(move || prover.prove(zisk_stdin))
+        .await?
+        .map_err(|e| anyhow::anyhow!("Failed to generate range proof: {}", e))?;
 
-            // Update Prometheus metrics
-            ProposerGauge::TotalInstructionCycles.set(total_instruction_cycles as f64);
-            ProposerGauge::TotalSP1Gas.set(total_sp1_gas as f64);
+        // Extract proof bytes
+        let proof_bytes = result.proof.proof
+            .ok_or_else(|| anyhow::anyhow!("Proof generation returned no proof"))?
+            .iter()
+            .flat_map(|&x| x.to_le_bytes())
+            .collect();
 
-            tracing::info!(
-                total_instruction_cycles = total_instruction_cycles,
-                total_sp1_gas = total_sp1_gas,
-                "Captured execution stats for range proof"
-            );
+        // TODO: Extract boot_info from ZisK outputs
+        // ZisK outputs are stored in emulator memory but not directly accessible via execution result
+        // For now, we reconstruct boot_info from block range (this is approximate)
+        // Future: Read outputs from saved files or access via witness_lib directly
+        let boot_info = BootInfoStruct {
+            l1Head: B256::ZERO, // TODO: Get from L1 head hash passed to range_proof_stdin
+            l2PreRoot: B256::ZERO, // These should come from actual execution
+            l2PostRoot: B256::ZERO,
+            l2BlockNumber: end_block,
+            rollupConfigHash: B256::ZERO, // TODO: Get from fetcher
+        };
 
-            // Create a mock range proof with the public values.
-            let proof = SP1ProofWithPublicValues::create_mock_proof(
-                &self.prover.range_pk,
-                public_values,
-                SP1ProofMode::Compressed,
-                SP1_CIRCUIT_VERSION,
-            );
+        // Extract instruction cycles
+        let total_instruction_cycles = result.execution.executed_steps;
 
-            Ok((proof, total_instruction_cycles, total_sp1_gas))
-        } else {
-            // In network mode, we don't have access to execution stats
-            let proof = self
-                .prover
-                .network_prover
-                .prove(&self.prover.range_pk, sp1_stdin)
-                .compressed()
-                .skip_simulation(true)
-                .strategy(self.config.range_proof_strategy)
-                .timeout(Duration::from_secs(self.config.timeout))
-                .min_auction_period(self.config.min_auction_period)
-                .max_price_per_pgu(self.config.max_price_per_pgu)
-                .cycle_limit(self.config.range_cycle_limit)
-                .gas_limit(self.config.range_gas_limit)
-                .whitelist(self.config.whitelist.clone())
-                .run_async()
-                .await?;
+        // Update Prometheus metrics
+        ProposerGauge::TotalInstructionCycles.set(total_instruction_cycles as f64);
+        ProposerGauge::TotalSP1Gas.set(0.0); // ZisK doesn't have SP1 gas
 
-            Ok((proof, 0, 0))
-        }
+        Ok((proof_bytes, boot_info, total_instruction_cycles))
     }
 
     async fn agg_proof_request(
         &self,
         game: &OPSuccinctFaultDisputeGameInstance<RootProvider>,
-        sp1_stdin: &SP1Stdin,
+        zisk_stdin: ZiskStdin,
     ) -> Result<TxHash> {
         tracing::info!("Generating Agg Proof");
-        let agg_proof = if self.config.mock_mode {
-            tracing::info!("Using mock mode for aggregation proof generation");
-            let (public_values, _) = self
-                .prover
-                .network_prover
-                .execute(AGGREGATION_ELF, sp1_stdin)
-                .deferred_proof_verification(false)
-                .run()?;
+        
+        // Build ZisK prover for aggregation proof
+        let prover = ProverClientBuilder::new()
+            .emu()
+            .prove()
+            .elf_path(self.prover.agg_elf_path.clone())
+            .proving_key_path(self.prover.agg_proving_key_path.clone())
+            .save_proofs(true)
+            .output_dir(self.prover.output_dir.clone())
+            .verify_proofs(true)
+            .aggregation(true)
+            .final_snark(true)
+            .build()
+            .map_err(|e| anyhow::anyhow!("Failed to build ZisK prover: {}", e))?;
 
-            // Create a mock aggregation proof with the public values.
-            SP1ProofWithPublicValues::create_mock_proof(
-                &self.prover.agg_pk,
-                public_values,
-                self.prover.agg_mode,
-                SP1_CIRCUIT_VERSION,
-            )
-        } else {
-            self.prover
-                .network_prover
-                .prove(&self.prover.agg_pk, sp1_stdin)
-                .mode(self.prover.agg_mode)
-                .strategy(self.config.agg_proof_strategy)
-                .timeout(Duration::from_secs(self.config.timeout))
-                .min_auction_period(self.config.min_auction_period)
-                .max_price_per_pgu(self.config.max_price_per_pgu)
-                .cycle_limit(self.config.agg_cycle_limit)
-                .gas_limit(self.config.agg_gas_limit)
-                .whitelist(self.config.whitelist.clone())
-                .run_async()
+        // Generate proof
+        let result = tokio::task::spawn_blocking(move || prover.prove(zisk_stdin))
                 .await?
-        };
+        .map_err(|e| anyhow::anyhow!("Failed to generate aggregation proof: {}", e))?;
 
-        let transaction_request = game.prove(agg_proof.bytes().into()).into_transaction_request();
+        // Extract proof bytes
+        let proof_bytes: Vec<u8> = result.proof.proof
+            .ok_or_else(|| anyhow::anyhow!("Proof generation returned no proof"))?
+            .iter()
+            .flat_map(|&x| x.to_le_bytes())
+            .collect();
+
+        let transaction_request = game.prove(proof_bytes.into()).into_transaction_request();
 
         let receipt = self
             .signer
@@ -1747,7 +1750,7 @@ where
                 let rt = tokio::runtime::Handle::current();
                 rt.block_on(async move {
                     let start_time = std::time::Instant::now();
-                    let (tx_hash, total_instruction_cycles, total_sp1_gas) =
+                    let (tx_hash, total_instruction_cycles, _) =
                         proposer.prove_game(game_address, start_block, end_block).await?;
 
                     // Record successful proving
@@ -1761,7 +1764,6 @@ where
                         tx_hash = ?tx_hash,
                         duration_s = start_time.elapsed().as_secs_f64(),
                         total_instruction_cycles = total_instruction_cycles,
-                        total_sp1_gas = total_sp1_gas,
                         "Game proven successfully"
                     );
                     Ok(())
@@ -1770,7 +1772,7 @@ where
         } else {
             tokio::spawn(async move {
                 let start_time = std::time::Instant::now();
-                let (tx_hash, total_instruction_cycles, total_sp1_gas) =
+                let (tx_hash, total_instruction_cycles, _) =
                     proposer.prove_game(game_address, start_block, end_block).await?;
 
                 // Record successful proving
@@ -1784,7 +1786,6 @@ where
                     tx_hash = ?tx_hash,
                     duration_s = start_time.elapsed().as_secs_f64(),
                     total_instruction_cycles = total_instruction_cycles,
-                    total_sp1_gas = total_sp1_gas,
                     "Game proven successfully"
                 );
                 Ok(())

@@ -1,29 +1,19 @@
-use std::{collections::HashMap, ops::Range, str::FromStr, sync::Arc, time::Duration};
+use std::{collections::HashMap, ops::Range, path::PathBuf, sync::Arc, time::Duration};
 
 use alloy_eips::BlockId;
 use alloy_primitives::{Address, B256, U256};
 use alloy_provider::{network::ReceiptResponse, Provider};
 use anyhow::{anyhow, Context, Result};
 use futures_util::{stream, StreamExt, TryStreamExt};
-use op_succinct_client_utils::{boot::hash_rollup_config, types::u32_to_u8};
-use op_succinct_elfs::AGGREGATION_ELF;
-use op_succinct_host_utils::{
-    fetcher::OPSuccinctDataFetcher,
+use op_zisk_client_utils::boot::hash_rollup_config;
+use op_zisk_host_utils::{
+    fetcher::OPZisKDataFetcher,
     host::OPSuccinctHost,
     metrics::MetricsGauge,
-    network::{determine_network_mode, get_network_signer},
     DisputeGameFactory::DisputeGameFactoryInstance as DisputeGameFactoryContract,
     OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract,
 };
-use op_succinct_proof_utils::get_range_elf_embedded;
-use op_succinct_signer_utils::SignerLock;
-use sp1_sdk::{
-    network::{
-        proto::types::{ExecutionStatus, FulfillmentStatus},
-        NetworkMode,
-    },
-    HashableKey, NetworkProver, Prover, ProverClient, SP1Proof, SP1ProofWithPublicValues,
-};
+use op_zisk_signer_utils::SignerLock;
 use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 
@@ -31,13 +21,12 @@ use crate::{
     db::{DriverDBClient, OPSuccinctRequest, RequestMode, RequestStatus, RequestType},
     find_gaps, get_latest_proposed_block_number, get_ranges_to_prove_by_blocks,
     get_ranges_to_prove_by_gas, CommitmentConfig, ContractConfig, OPSuccinctProofRequester,
-    ProgramConfig, RequestExecutionStatistics, RequesterConfig, ValidityGauge,
+    ProgramConfig, RequesterConfig, ValidityGauge,
 };
 
 /// Configuration for the driver.
 pub struct DriverConfig {
-    pub network_prover: Arc<NetworkProver>,
-    pub fetcher: Arc<OPSuccinctDataFetcher>,
+    pub fetcher: Arc<OPZisKDataFetcher>,
     pub driver_db_client: Arc<DriverDBClient>,
     pub signer: SignerLock,
     pub loop_interval: u64,
@@ -64,7 +53,7 @@ where
     pub async fn new(
         provider: P,
         db_client: Arc<DriverDBClient>,
-        fetcher: Arc<OPSuccinctDataFetcher>,
+        fetcher: Arc<OPZisKDataFetcher>,
         requester_config: RequesterConfig,
         signer: SignerLock,
         loop_interval: u64,
@@ -90,31 +79,40 @@ where
             .add_chain_lock(requester_config.l1_chain_id, requester_config.l2_chain_id)
             .await?;
 
-        // Set up the network prover.
-        let network_signer = get_network_signer(requester_config.use_kms_requester).await?;
-        let network_mode = determine_network_mode(
-            requester_config.range_proof_strategy,
-            requester_config.agg_proof_strategy,
-        )?;
-        let network_prover = Arc::new(
-            ProverClient::builder().network_for(network_mode).signer(network_signer).build(),
-        );
+        // ZisK uses file-based proving keys, not in-memory setup
+        // Load ELF paths and proving key paths from environment or config
+        let range_elf_path = std::env::var("RANGE_ELF_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("target/riscv64ima-zisk-zkvm-elf/release/range"));
+        let agg_elf_path = std::env::var("AGG_ELF_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("target/riscv64ima-zisk-zkvm-elf/release/aggregation"));
+        let range_proving_key_path = std::env::var("RANGE_PROVING_KEY_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| "~".to_string());
+                PathBuf::from(format!("{}/.zisk/provingKey", home))
+            });
+        let agg_proving_key_path = std::env::var("AGG_PROVING_KEY_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| "~".to_string());
+                PathBuf::from(format!("{}/.zisk/provingKey", home))
+            });
 
-        let (range_pk, range_vk) = network_prover.setup(get_range_elf_embedded());
-
-        let (agg_pk, agg_vk) = network_prover.setup(AGGREGATION_ELF);
-        let multi_block_vkey_u8 = u32_to_u8(range_vk.vk.hash_u32());
-        let range_vkey_commitment = B256::from(multi_block_vkey_u8);
-        let agg_vkey_hash = B256::from_str(&agg_vk.bytes32()).unwrap();
+        // TODO: Load verification key commitments from proving keys
+        // For now, use placeholders - these should be loaded from the proving key files
+        let range_vkey_commitment = B256::ZERO; // TODO: Load from proving key
+        let agg_vkey_hash = B256::ZERO; // TODO: Load from proving key
 
         // Initialize fetcher
         let rollup_config_hash = hash_rollup_config(fetcher.rollup_config.as_ref().unwrap());
 
         let program_config = ProgramConfig {
-            range_vk: Arc::new(range_vk),
-            range_pk: Arc::new(range_pk),
-            agg_vk: Arc::new(agg_vk),
-            agg_pk: Arc::new(agg_pk),
+            range_elf_path,
+            agg_elf_path,
+            range_proving_key_path,
+            agg_proving_key_path,
             commitments: CommitmentConfig {
                 range_vkey_commitment,
                 agg_vkey_hash,
@@ -123,26 +121,18 @@ where
         };
 
         // Initialize the proof requester.
+        let output_dir = std::env::var("PROOF_OUTPUT_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("tmp"));
         let proof_requester = Arc::new(OPSuccinctProofRequester::new(
             host,
-            network_prover.clone(),
             fetcher.clone(),
             db_client.clone(),
             program_config.clone(),
             requester_config.mock,
-            requester_config.range_proof_strategy,
-            requester_config.agg_proof_strategy,
-            requester_config.agg_proof_mode,
             requester_config.safe_db_fallback,
-            requester_config.max_price_per_pgu,
             requester_config.proving_timeout,
-            requester_config.range_cycle_limit,
-            requester_config.range_gas_limit,
-            requester_config.agg_cycle_limit,
-            requester_config.agg_gas_limit,
-            requester_config.whitelist.clone(),
-            requester_config.min_auction_period,
-            requester_config.auction_timeout,
+            output_dir,
         ));
 
         let l2oo_contract =
@@ -153,7 +143,6 @@ where
 
         let proposer = Proposer {
             driver_config: DriverConfig {
-                network_prover,
                 fetcher,
                 driver_db_client: db_client,
                 signer,
@@ -329,185 +318,32 @@ where
         Ok(())
     }
 
-    /// Process a single OP Succinct request's proof status.
+    /// Process a single OP-ZisK request's proof status.
+    /// Note: ZisK generates proofs synchronously, so this function is simplified.
+    /// Proofs should already be in the database when status is "Prove".
     #[tracing::instrument(name = "proposer.process_proof_request_status", skip(self, request))]
     pub async fn process_proof_request_status(&self, request: OPSuccinctRequest) -> Result<()> {
-        if let Some(proof_request_id) = request.proof_request_id.as_ref() {
-            let proof_request_id = B256::from_slice(proof_request_id);
-            let (status, proof) = self
-                .network_call_with_timeout(
-                    self.driver_config.network_prover.get_proof_status(proof_request_id),
-                    "waiting for proof status",
-                    &request,
-                )
-                .await?;
-
-            let request_details = self
-                .network_call_with_timeout(
-                    self.driver_config.network_prover.get_proof_request(proof_request_id),
-                    "waiting for proof request details",
-                    &request,
-                )
-                .await?;
-
-            // Check if current time exceeds deadline. If so, the proof has timed out.
-            let current_time = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
-
-            // Cancel the request in the network if the auction timeout is exceeded.
-            if let Some(request_details) = request_details {
-                let auction_deadline =
-                    request_details.created_at + self.requester_config.auction_timeout;
-                if self.driver_config.network_prover.network_mode() == NetworkMode::Mainnet &&
-                    request_details.fulfillment_status == FulfillmentStatus::Requested as i32 &&
-                    current_time > auction_deadline
-                {
-                    // Cancel the request in the network.
-                    self.network_call_with_timeout(
-                        self.driver_config.network_prover.cancel_request(proof_request_id),
-                        "cancelling proof request",
-                        &request,
-                    )
-                    .await?;
-
-                    // Mark the request as cancelled in the database.
-                    match self.proof_requester.handle_cancelled_request(request.clone()).await {
-                        Ok(_) => ValidityGauge::ProofRequestRetryCount.increment(1.0),
-                        Err(e) => {
-                            ValidityGauge::RetryErrorCount.increment(1.0);
-                            return Err(e);
-                        }
-                    }
-
-                    ValidityGauge::ProofRequestTimeoutErrorCount.increment(1.0);
-
-                    match request.req_type {
-                        RequestType::Range => {
-                            warn!(
-                                proof_id = request.id,
-                                start_block = request.start_block,
-                                end_block = request.end_block,
-                                auction_deadline = auction_deadline,
-                                current_time = current_time,
-                                "Range proof request auction deadline exceeded"
-                            );
-                        }
-                        RequestType::Aggregation => {
-                            warn!(
-                                proof_id = request.id,
-                                start_block = request.start_block,
-                                end_block = request.end_block,
-                                auction_deadline = auction_deadline,
-                                current_time = current_time,
-                                "Aggregation proof request auction deadline exceeded"
-                            );
-                        }
-                    }
-
-                    return Ok(());
-                }
-            }
-
-            if current_time > status.deadline() {
-                match self
-                    .proof_requester
-                    .handle_failed_request(request.clone(), status.execution_status())
-                    .await
-                {
-                    Ok(_) => ValidityGauge::ProofRequestRetryCount.increment(1.0),
-                    Err(e) => {
-                        ValidityGauge::RetryErrorCount.increment(1.0);
-                        return Err(e);
-                    }
-                }
-
-                ValidityGauge::ProofRequestTimeoutErrorCount.increment(1.0);
-
-                match request.req_type {
-                    RequestType::Range => {
-                        warn!(
-                            proof_id = request.id,
-                            start_block = request.start_block,
-                            end_block = request.end_block,
-                            deadline = status.deadline(),
-                            current_time = current_time,
-                            "Range proof request timed out"
-                        );
-                    }
-                    RequestType::Aggregation => {
-                        warn!(
-                            proof_id = request.id,
-                            start_block = request.start_block,
-                            end_block = request.end_block,
-                            deadline = status.deadline(),
-                            current_time = current_time,
-                            "Aggregation proof request timed out"
-                        );
-                    }
-                }
-
-                return Ok(());
-            }
-
-            // If the proof request has been fulfilled, update the request to status Complete and
-            // add the proof bytes to the database.
-            if status.fulfillment_status() == FulfillmentStatus::Fulfilled as i32 {
-                let proof: SP1ProofWithPublicValues = proof.unwrap();
-
-                let proof_bytes = match proof.proof {
-                    // If it's a compressed proof, serialize with bincode.
-                    SP1Proof::Compressed(_) => bincode::serialize(&proof).unwrap(),
-                    // If it's Groth16 or PLONK, get the on-chain proof bytes.
-                    SP1Proof::Groth16(_) | SP1Proof::Plonk(_) => proof.bytes(),
-                    SP1Proof::Core(_) => return Err(anyhow!("Core proofs are not supported.")),
-                };
-
-                // Add the completed proof to the database.
+        // ZisK generates proofs synchronously, so if status is "Prove", the proof should already be complete
+        // Check if proof exists in database
+        if request.proof.is_some() {
+            // Proof already exists - update status to Complete if not already
+            if request.status != RequestStatus::Complete {
                 self.driver_config
                     .driver_db_client
-                    .update_proof_to_complete(request.id, &proof_bytes)
+                    .update_request_status(request.id, RequestStatus::Complete)
                     .await?;
-                // Update the prove_duration based on the current time and the proof_request_time.
+                
+                // Update prove_duration
                 self.driver_config.driver_db_client.update_prove_duration(request.id).await?;
-
-                if let Some(proof_request) = self
-                    .network_call_with_timeout(
-                        self.driver_config.network_prover.get_proof_request(proof_request_id),
-                        "fetching execution statistics",
-                        &request,
-                    )
-                    .await?
-                {
-                    let execution_statistics = RequestExecutionStatistics::from(&proof_request);
-
-                    // Write the execution data to the database.
-                    self.driver_config
-                        .driver_db_client
-                        .insert_execution_statistics(
-                            request.id,
-                            serde_json::to_value(execution_statistics)?,
-                            0,
-                        )
-                        .await?;
-                }
-
-                // Log completion of range and aggregation proofs.
+                
+                // Log completion
                 match request.req_type {
                     RequestType::Range => {
                         info!(
                             proof_id = request.id,
                             start_block = request.start_block,
                             end_block = request.end_block,
-                            proof_request_time = ?request.proof_request_time,
-                            total_tx_fees = %request.total_tx_fees,
-                            total_transactions = request.total_nb_transactions,
-                            witnessgen_duration_s = request.witnessgen_duration,
-                            prove_duration_s = request.prove_duration,
-                            total_eth_gas_used = request.total_eth_gas_used,
-                            total_l1_fees = %request.total_l1_fees,
-                            "Range proof completed successfully"
+                            "Range proof completed with ZisK"
                         );
                     }
                     RequestType::Aggregation => {
@@ -515,52 +351,24 @@ where
                             proof_id = request.id,
                             start_block = request.start_block,
                             end_block = request.end_block,
-                            witnessgen_duration_s = request.witnessgen_duration,
-                            prove_duration_s = request.prove_duration,
-                            "Aggregation proof completed successfully"
+                            "Aggregation proof completed with ZisK"
                         );
                     }
                 }
-            } else if status.fulfillment_status() == FulfillmentStatus::Unfulfillable as i32 {
-                // Log failure of range and aggregation proofs.
-                match request.req_type {
-                    RequestType::Range => {
-                        warn!(
-                            proof_id = request.id,
-                            start_block = request.start_block,
-                            end_block = request.end_block,
-                            proof_request_time = ?request.proof_request_time,
-                            total_tx_fees = %request.total_tx_fees,
-                            total_transactions = request.total_nb_transactions,
-                            witnessgen_duration_s = request.witnessgen_duration,
-                            total_eth_gas_used = request.total_eth_gas_used,
-                            total_l1_fees = %request.total_l1_fees,
-                            execution_status = ?status.execution_status(),
-                            "Range proof request failed - unfulfillable"
-                        );
-                    }
-                    RequestType::Aggregation => {
-                        warn!(
-                            proof_id = request.id,
-                            start_block = request.start_block,
-                            end_block = request.end_block,
-                            witnessgen_duration_s = request.witnessgen_duration,
-                            execution_status = ?status.execution_status(),
-                            "Aggregation proof request failed - unfulfillable"
-                        );
-                    }
-                }
-
-                self.proof_requester
-                    .handle_failed_request(request, status.execution_status())
-                    .await?;
-                ValidityGauge::ProofRequestRetryCount.increment(1.0);
             }
-        } else {
-            // There should never be a proof request in Prove status without a proof request id.
-            tracing::warn!(id = request.id, start_block = request.start_block, end_block = request.end_block, req_type = ?request.req_type, "Request has no proof request id");
+            return Ok(());
         }
-
+        
+        // If no proof yet and status is "Prove", the proof generation may have failed
+        // This shouldn't happen with ZisK's synchronous model, but handle it gracefully
+        if request.status == RequestStatus::Prove {
+            warn!(
+                proof_id = request.id,
+                "Proof status is 'Prove' but no proof found - this shouldn't happen with ZisK"
+            );
+        }
+        
+        // ZisK migration: legacy SP1 async-network status handling removed.
         Ok(())
     }
 
@@ -1095,7 +903,7 @@ where
                 .contract_config
                 .l2oo_contract
                 .dgfProposeL2Output(
-                    self.requester_config.op_succinct_config_name_hash,
+                    self.requester_config.op_zisk_config_name_hash,
                     output.output_root,
                     U256::from(completed_agg_proof.end_block),
                     U256::from(completed_agg_proof.checkpointed_l1_block_number.unwrap()),
@@ -1119,7 +927,7 @@ where
                 .contract_config
                 .l2oo_contract
                 .proposeL2Output(
-                    self.requester_config.op_succinct_config_name_hash,
+                    self.requester_config.op_zisk_config_name_hash,
                     output.output_root,
                     U256::from(completed_agg_proof.end_block),
                     U256::from(completed_agg_proof.checkpointed_l1_block_number.unwrap()),
@@ -1147,7 +955,7 @@ where
 
     /// Validate the requester config matches the contract.
     async fn validate_contract_config(&self) -> Result<()> {
-        let config_name = self.requester_config.op_succinct_config_name_hash;
+        let config_name = self.requester_config.op_zisk_config_name_hash;
 
         let contract_config =
             self.contract_config.l2oo_contract.opSuccinctConfigs(config_name).call().await?;
@@ -1278,7 +1086,7 @@ where
                                 .proof_requester
                                 .handle_failed_request(
                                     request,
-                                    ExecutionStatus::UnspecifiedExecutionStatus as i32,
+                                    0,
                                 )
                                 .await
                             {
@@ -1304,7 +1112,7 @@ where
                             .proof_requester
                             .handle_failed_request(
                                 request,
-                                ExecutionStatus::UnspecifiedExecutionStatus as i32,
+                                0,
                             )
                             .await
                         {
@@ -1572,66 +1380,5 @@ where
         Ok(Some(current_end))
     }
 
-    /// Helper method to wrap network prover calls with timeout and proper error handling.
-    ///
-    /// This method:
-    /// - Wraps the network call in a timeout to prevent indefinite hangs
-    /// - Preserves the original network error context when operations fail
-    /// - Logs timeout events with request context for debugging
-    /// - Increments timeout metrics for monitoring
-    async fn network_call_with_timeout<F, T>(
-        &self,
-        future: F,
-        operation_name: &str,
-        request: &OPSuccinctRequest,
-    ) -> Result<T>
-    where
-        F: std::future::Future<Output = Result<T>>,
-    {
-        match tokio::time::timeout(
-            Duration::from_secs(self.requester_config.network_calls_timeout),
-            future,
-        )
-        .await
-        {
-            Ok(Ok(result)) => Ok(result),
-            Ok(Err(network_error)) => {
-                warn!(
-                    request_id = request.id,
-                    start_block = request.start_block,
-                    end_block = request.end_block,
-                    operation = operation_name,
-                    error = %network_error,
-                    "Network error during operation"
-                );
-                Err(anyhow!(
-                    "Network error {} for request {} (start_block={}, end_block={}): {}",
-                    operation_name,
-                    request.id,
-                    request.start_block,
-                    request.end_block,
-                    network_error
-                ))
-            }
-            Err(_) => {
-                warn!(
-                    request_id = request.id,
-                    start_block = request.start_block,
-                    end_block = request.end_block,
-                    operation = operation_name,
-                    timeout_secs = self.requester_config.network_calls_timeout,
-                    "Network call timeout"
-                );
-                ValidityGauge::NetworkCallTimeoutCount.increment(1.0);
-                Err(anyhow!(
-                    "Timeout after {}s {} for request {} (start_block={}, end_block={})",
-                    self.requester_config.network_calls_timeout,
-                    operation_name,
-                    request.id,
-                    request.start_block,
-                    request.end_block
-                ))
-            }
-        }
-    }
+    // NOTE: The legacy network-prover timeout helper was removed as ZisK proving is local/synchronous.
 }

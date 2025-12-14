@@ -394,26 +394,30 @@ vkeys:
 # Build all ELF files.
 build-elfs: build-range-elfs build-agg-elf
 
-# Build ELF files for range programs.
+# Build ELF files for range programs using ZisK.
 build-range-elfs:
     #!/usr/bin/env bash
 
     cd programs/range/ethereum
-    ~/.sp1/bin/cargo-prove prove build --elf-name range-elf-bump --docker --tag v5.2.2 --output-directory ../../../elf
-    ~/.sp1/bin/cargo-prove prove build --elf-name range-elf-embedded --docker --tag v5.2.2 --output-directory ../../../elf --features embedded
+    cargo-zisk build --release
+    cp target/riscv64ima-zisk-zkvm-elf/release/range ../../../elf/range-elf-bump
+    cp target/riscv64ima-zisk-zkvm-elf/release/range ../../../elf/range-elf-embedded
 
     cd ../celestia
-    ~/.sp1/bin/cargo-prove prove build --elf-name celestia-range-elf-embedded --docker --tag v5.2.2 --output-directory ../../../elf --features embedded
+    cargo-zisk build --release
+    cp target/riscv64ima-zisk-zkvm-elf/release/range-celestia ../../../elf/celestia-range-elf-embedded
 
     cd ../eigenda
-    ~/.sp1/bin/cargo-prove prove build --elf-name eigenda-range-elf-embedded --docker --tag v5.2.2 --output-directory ../../../elf --features embedded
+    cargo-zisk build --release
+    cp target/riscv64ima-zisk-zkvm-elf/release/range-eigenda ../../../elf/eigenda-range-elf-embedded
 
-# Build ELF file for aggregation program.
+# Build ELF file for aggregation program using ZisK.
 build-agg-elf:
     #!/usr/bin/env bash
 
     cd programs/aggregation
-    ~/.sp1/bin/cargo-prove prove build --elf-name aggregation-elf --docker --tag v5.2.2 --output-directory ../../elf
+    cargo-zisk build --release
+    cp target/riscv64ima-zisk-zkvm-elf/release/aggregation ../../elf/aggregation-elf
 
 # Run all unit tests except for the specified ones.
 tests:

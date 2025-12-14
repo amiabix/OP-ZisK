@@ -1,4 +1,4 @@
-use op_succinct_host_utils::metrics::MetricsGauge;
+use op_zisk_host_utils::metrics::MetricsGauge;
 use strum::EnumMessage;
 use strum_macros::{Display, EnumIter};
 
@@ -7,83 +7,83 @@ use strum_macros::{Display, EnumIter};
 pub enum ProposerGauge {
     // Proposer metrics
     #[strum(
-        serialize = "op_succinct_fp_finalized_l2_block_number",
+        serialize = "op_zisk_fp_finalized_l2_block_number",
         message = "Finalized L2 block number"
     )]
     FinalizedL2BlockNumber,
     #[strum(
-        serialize = "op_succinct_fp_latest_game_l2_block_number",
+        serialize = "op_zisk_fp_latest_game_l2_block_number",
         message = "Latest game L2 block number"
     )]
     LatestGameL2BlockNumber,
     #[strum(
-        serialize = "op_succinct_fp_anchor_game_l2_block_number",
+        serialize = "op_zisk_fp_anchor_game_l2_block_number",
         message = "Anchor game L2 block number"
     )]
     AnchorGameL2BlockNumber,
     #[strum(
-        serialize = "op_succinct_fp_games_created",
+        serialize = "op_zisk_fp_games_created",
         message = "Total number of games created by the proposer"
     )]
     GamesCreated,
     #[strum(
-        serialize = "op_succinct_fp_games_resolved",
+        serialize = "op_zisk_fp_games_resolved",
         message = "Total number of games resolved by the proposer"
     )]
     GamesResolved,
     #[strum(
-        serialize = "op_succinct_fp_games_bonds_claimed",
+        serialize = "op_zisk_fp_games_bonds_claimed",
         message = "Total number of games that bonds were claimed by the proposer"
     )]
     GamesBondsClaimed,
     #[strum(
-        serialize = "op_succinct_fp_active_proving_tasks",
+        serialize = "op_zisk_fp_active_proving_tasks",
         message = "Number of game proving tasks currently in progress"
     )]
     ActiveProvingTasks,
     #[strum(
-        serialize = "op_succinct_fp_games_proven",
+        serialize = "op_zisk_fp_games_proven",
         message = "Total number of games successfully proven by the proposer"
     )]
     GamesProven,
     #[strum(
-        serialize = "op_succinct_fp_proving_duration_seconds",
+        serialize = "op_zisk_fp_proving_duration_seconds",
         message = "Duration of last successful game proving in seconds"
     )]
     ProvingDurationSeconds,
     // Error metrics
     #[strum(
-        serialize = "op_succinct_fp_game_creation_error",
+        serialize = "op_zisk_fp_game_creation_error",
         message = "Total number of game creation errors encountered by the proposer"
     )]
     GameCreationError,
     #[strum(
-        serialize = "op_succinct_fp_game_proving_error",
+        serialize = "op_zisk_fp_game_proving_error",
         message = "Total number of game proving errors encountered by the proposer"
     )]
     GameProvingError,
     #[strum(
-        serialize = "op_succinct_fp_game_resolution_error",
+        serialize = "op_zisk_fp_game_resolution_error",
         message = "Total number of game resolution errors encountered by the proposer"
     )]
     GameResolutionError,
     #[strum(
-        serialize = "op_succinct_fp_bond_claiming_error",
+        serialize = "op_zisk_fp_bond_claiming_error",
         message = "Total number of bond claiming errors encountered by the proposer"
     )]
     BondClaimingError,
     #[strum(
-        serialize = "op_succinct_fp_metrics_error",
+        serialize = "op_zisk_fp_metrics_error",
         message = "Total number of metrics errors encountered by the proposer"
     )]
     MetricsError,
     #[strum(
-        serialize = "op_succinct_fp_total_instruction_cycles",
+        serialize = "op_zisk_fp_total_instruction_cycles",
         message = "Total instruction cycles from last successful game proving"
     )]
     TotalInstructionCycles,
     #[strum(
-        serialize = "op_succinct_fp_total_sp1_gas",
+        serialize = "op_zisk_fp_total_sp1_gas",
         message = "Total SP1 gas used in last successful game proving"
     )]
     TotalSP1Gas,
@@ -96,33 +96,33 @@ impl MetricsGauge for ProposerGauge {}
 pub enum ChallengerGauge {
     // Challenger metrics
     #[strum(
-        serialize = "op_succinct_fp_challenger_games_challenged",
+        serialize = "op_zisk_fp_challenger_games_challenged",
         message = "Total number of games challenged by the challenger"
     )]
     GamesChallenged,
     #[strum(
-        serialize = "op_succinct_fp_challenger_games_resolved",
+        serialize = "op_zisk_fp_challenger_games_resolved",
         message = "Total number of games resolved by the challenger"
     )]
     GamesResolved,
     #[strum(
-        serialize = "op_succinct_fp_challenger_games_bonds_claimed",
+        serialize = "op_zisk_fp_challenger_games_bonds_claimed",
         message = "Total number of games that bonds were claimed by the challenger"
     )]
     GamesBondsClaimed,
     // Error metrics
     #[strum(
-        serialize = "op_succinct_fp_challenger_game_challenging_error",
+        serialize = "op_zisk_fp_challenger_game_challenging_error",
         message = "Total number of game challenging errors encountered by the challenger"
     )]
     GameChallengingError,
     #[strum(
-        serialize = "op_succinct_fp_challenger_game_resolution_error",
+        serialize = "op_zisk_fp_challenger_game_resolution_error",
         message = "Total number of game resolution errors encountered by the challenger"
     )]
     GameResolutionError,
     #[strum(
-        serialize = "op_succinct_fp_challenger_bond_claiming_error",
+        serialize = "op_zisk_fp_challenger_bond_claiming_error",
         message = "Total number of bond claiming errors encountered by the challenger"
     )]
     BondClaimingError,

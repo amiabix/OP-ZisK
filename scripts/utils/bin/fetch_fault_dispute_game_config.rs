@@ -3,13 +3,13 @@ use std::{env, sync::Arc};
 use alloy_eips::BlockId;
 use anyhow::{bail, Result};
 use fault_proof::config::FaultDisputeGameConfig;
-use op_succinct_host_utils::{
-    fetcher::{OPSuccinctDataFetcher, RPCMode},
+use op_zisk_host_utils::{
+    fetcher::{OPZisKDataFetcher, RPCMode},
     host::OPSuccinctHost,
     setup_logger, OP_SUCCINCT_FAULT_DISPUTE_GAME_CONFIG_PATH,
 };
-use op_succinct_proof_utils::initialize_host;
-use op_succinct_scripts::config_common::{
+use op_zisk_proof_utils::initialize_host;
+use op_zisk_scripts::config_common::{
     find_project_root, get_shared_config_data, parse_addresses, write_config_file,
     TWO_WEEKS_IN_SECONDS,
 };
@@ -72,7 +72,7 @@ use serde_json::Value;
 /// Generates `contracts/opsuccinctfdgconfig.json` containing all configuration parameters
 /// needed for the Solidity deployment scripts.
 async fn update_fdg_config() -> Result<()> {
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
     let host = initialize_host(Arc::new(data_fetcher.clone()));
     let shared_config = get_shared_config_data(data_fetcher.clone()).await?;
 

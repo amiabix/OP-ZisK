@@ -21,7 +21,7 @@ import (
 )
 
 // -------------------------------------------------------------
-// L2 OP Succinct Output Oracle Client
+// L2 OP-ZisK Output Oracle Client
 // -------------------------------------------------------------
 
 // L2OOClient is a client for interacting with the SuccinctL2OutputOracle contract.

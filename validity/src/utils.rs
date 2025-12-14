@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use op_succinct_host_utils::fetcher::BlockInfo;
+use op_zisk_host_utils::fetcher::BlockInfo;
 use std::{collections::HashMap, ops::Range};
 
 /// Identifies gaps not covered by the given sub-ranges in the overall range.
@@ -10,7 +10,7 @@ use std::{collections::HashMap, ops::Range};
 /// # Example
 ///
 /// ```
-/// use op_succinct_validity::find_gaps;
+/// use op_zisk_validity::find_gaps;
 ///
 /// let overall_start = 1;
 /// let overall_end = 10;
@@ -52,7 +52,7 @@ pub fn find_gaps(overall_start: i64, overall_end: i64, ranges: &[(i64, i64)]) ->
 /// # Example
 ///
 /// ```ignore
-/// use op_succinct_validity::get_ranges_to_prove_by_gas;
+/// use op_zisk_validity::get_ranges_to_prove_by_gas;
 /// use std::collections::HashMap;
 ///
 /// let disjoint_ranges = [(0, 4)];
@@ -134,7 +134,7 @@ pub fn get_ranges_to_prove_by_gas(
 /// # Example
 ///
 /// ```
-/// use op_succinct_validity::get_ranges_to_prove_by_blocks;
+/// use op_zisk_validity::get_ranges_to_prove_by_blocks;
 ///
 /// let disjoint_ranges = [0..50, 100..200, 200..210];
 /// let range_proof_interval = 25;
@@ -203,7 +203,7 @@ fn merge_ranges(mut ranges: Vec<Range<i64>>) -> Vec<Range<i64>> {
 #[allow(clippy::single_range_in_vec_init)]
 mod tests {
     use super::*;
-    use op_succinct_host_utils::fetcher::BlockInfo;
+    use op_zisk_host_utils::fetcher::BlockInfo;
     use std::collections::HashMap;
 
     // Tests for find_gaps

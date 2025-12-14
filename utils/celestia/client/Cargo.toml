@@ -1,12 +1,12 @@
 [package]
-name = "op-succinct-celestia-client-utils"
+name = "op-zisk-celestia-client-utils"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
 
 [dependencies]
 # local
-op-succinct-client-utils.workspace = true
+op-zisk-client-utils.workspace = true
 
 # kona
 kona-derive.workspace = true

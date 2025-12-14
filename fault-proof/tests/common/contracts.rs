@@ -4,8 +4,8 @@ use alloy_rpc_types_eth::{transaction::request::TransactionInput, TransactionReq
 use alloy_sol_types::SolConstructor;
 use alloy_transport_http::reqwest::Url;
 use anyhow::{anyhow, Context, Result};
-use op_succinct_bindings::mock_permissioned_dispute_game::MockPermissionedDisputeGame;
-use op_succinct_signer_utils::SignerLock;
+use op_zisk_bindings::mock_permissioned_dispute_game::MockPermissionedDisputeGame;
+use op_zisk_signer_utils::SignerLock;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 

@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-range-utils"
+name = "op-zisk-range-utils"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
@@ -11,19 +11,19 @@ repository.workspace = true
 tracing.workspace = true
 anyhow.workspace = true
 rkyv.workspace = true
+bincode.workspace = true
 
 # kona
 kona-proof.workspace = true
 
-# sp1
-sp1-zkvm.workspace = true
+# zisk
+ziskos.workspace = true
 
-# op-succinct
-op-succinct-client-utils.workspace = true
+# op-zisk
+op-zisk-client-utils.workspace = true
 
 # `tracing-subscriber` feature dependencies
 tracing-subscriber = { workspace = true, optional = true }
 
 [features]
-embedded = ["sp1-zkvm/embedded"]
 tracing-subscriber = ["dep:tracing-subscriber"]

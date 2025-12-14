@@ -1,17 +1,17 @@
 [package]
-name = "op-succinct-celestia-host-utils"
+name = "op-zisk-celestia-host-utils"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
 
 [dependencies]
-# sp1
-sp1-sdk.workspace = true
+# zisk
+zisk-common.workspace = true
 
 # local
-op-succinct-celestia-client-utils.workspace = true
-op-succinct-client-utils.workspace = true
-op-succinct-host-utils.workspace = true
+op-zisk-celestia-client-utils.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-host-utils.workspace = true
 
 # kona
 kona-preimage.workspace = true

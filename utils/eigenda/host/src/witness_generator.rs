@@ -1,11 +1,7 @@
-use std::{
-    env,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use async_trait::async_trait;
-use canoe_verifier_address_fetcher::CanoeVerifierAddressFetcherDeployedByEigenLabs;
 use hokulea_compute_proof::create_kzg_proofs_for_eigenda_preimage;
 use hokulea_proof::{
     eigenda_provider::OracleEigenDAPreimageProvider,
@@ -14,20 +10,18 @@ use hokulea_proof::{
 use hokulea_witgen::witness_provider::OracleEigenDAPreimageProviderWithPreimage;
 use kona_preimage::{HintWriter, NativeChannel, OracleReader};
 use kona_proof::l1::OracleBlobProvider;
-use op_succinct_client_utils::witness::{
+use op_zisk_client_utils::witness::{
     executor::{get_inputs_for_pipeline, WitnessExecutor as WitnessExecutorTrait},
     preimage_store::PreimageStore,
     BlobData, EigenDAWitnessData,
 };
-use op_succinct_eigenda_client_utils::executor::EigenDAWitnessExecutor;
-use op_succinct_host_utils::witness_generation::{
+use op_zisk_eigenda_client_utils::executor::EigenDAWitnessExecutor;
+use op_zisk_host_utils::witness_generation::{
     online_blob_store::OnlineBlobStore, preimage_witness_collector::PreimageWitnessCollector,
     DefaultOracleBase, WitnessGenerator,
 };
 use rkyv::to_bytes;
-use sp1_core_executor::SP1ReduceProof;
-use sp1_prover::InnerSC;
-use sp1_sdk::{ProverClient, SP1Stdin};
+use zisk_common::io::ZiskStdin;
 
 type WitnessExecutor = EigenDAWitnessExecutor<
     PreimageWitnessCollector<DefaultOracleBase>,
@@ -46,40 +40,10 @@ impl WitnessGenerator for EigenDAWitnessGenerator {
         panic!("get_executor should not be called directly for EigenDAWitnessGenerator")
     }
 
-    fn get_sp1_stdin(&self, mut witness: Self::WitnessData) -> Result<SP1Stdin> {
-        let mut stdin = SP1Stdin::new();
-
-        // If eigenda blob witness data is present, write the canoe proof to stdin
-        if let Some(eigenda_data) = &witness.eigenda_data {
-            let mut eigenda_witness: EigenDAWitness = serde_cbor::from_slice(eigenda_data)
-                .map_err(|e| {
-                    anyhow::anyhow!("Failed to deserialize EigenDA blob witness data: {}", e)
-                })?;
-
-            // Take the canoe proof bytes from the witness data
-            if let Some(proof_bytes) = eigenda_witness.canoe_proof_bytes.take() {
-                // Get the canoe SP1 CC client ELF and setup verification key
-                // The ELF is included in the canoe-sp1-cc-host crate
-                const CANOE_ELF: &[u8] = canoe_sp1_cc_host::ELF;
-                let client = ProverClient::from_env();
-                let (_pk, canoe_vk) = client.setup(CANOE_ELF);
-
-                let reduced_proof: SP1ReduceProof<InnerSC> =
-                    serde_cbor::from_slice(&proof_bytes)
-                        .map_err(|e| anyhow::anyhow!("Failed to deserialize canoe proof: {}", e))?;
-                stdin.write_proof(reduced_proof, canoe_vk.vk.clone());
-
-                // Re-serialize the witness data without the proof
-                witness.eigenda_data = Some(serde_cbor::to_vec(&eigenda_witness).map_err(|e| {
-                    anyhow::anyhow!("Failed to serialize sanitized EigenDA data: {}", e)
-                })?);
-            }
-        }
-
-        // Write the witness data after the proofs
+    fn get_zisk_stdin(&self, witness: Self::WitnessData) -> Result<ZiskStdin> {
+        // Serialize witness data
         let buffer = to_bytes::<rkyv::rancor::Error>(&witness)?;
-        stdin.write_slice(&buffer);
-        Ok(stdin)
+        Ok(ZiskStdin::from_vec(buffer.to_vec()))
     }
 
     async fn run(
@@ -140,26 +104,8 @@ impl WitnessGenerator for EigenDAWitnessGenerator {
 
         let kzg_proofs = create_kzg_proofs_for_eigenda_preimage(&eigenda_preimage_data);
 
-        // Generate canoe proofs using the reduced proof provider for proof aggregation
-        use canoe_sp1_cc_host::CanoeSp1CCReducedProofProvider;
-        let eth_rpc_url = std::env::var("L1_RPC")
-            .map_err(|_| anyhow::anyhow!("L1_RPC environment variable not set"))?;
-        let mock_mode = env::var("OP_SUCCINCT_MOCK")
-            .unwrap_or("false".to_string())
-            .parse::<bool>()
-            .unwrap_or(false);
-        let canoe_provider = CanoeSp1CCReducedProofProvider { eth_rpc_url, mock_mode };
-        let maybe_canoe_proof = hokulea_witgen::from_boot_info_to_canoe_proof(
-            &boot_info,
-            &eigenda_preimage_data,
-            oracle.clone(),
-            canoe_provider,
-            CanoeVerifierAddressFetcherDeployedByEigenLabs {},
-        )
-        .await?;
-
-        let maybe_canoe_proof_bytes =
-            maybe_canoe_proof.map(|proof| serde_cbor::to_vec(&proof).expect("serde error"));
+        // ZisK migration: Canoe reduced proofs are SP1-specific and are not generated here.
+        let maybe_canoe_proof_bytes: Option<Vec<u8>> = None;
 
         let eigenda_witness = EigenDAWitness::from_preimage(
             eigenda_preimage_data,

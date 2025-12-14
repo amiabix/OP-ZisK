@@ -11,12 +11,16 @@ members = [
     "utils/signer",
     "utils/ethereum/client",
     "utils/ethereum/host",
-    "programs/range/*",
+    "programs/range/utils",
+    "programs/range/ethereum",
+    "programs/range/celestia",
     "programs/aggregation",
-    "scripts/*",
     "validity",
     "fault-proof",
     "bindings",
+    "scripts/utils",
+    "scripts/prove",
+    "programs/range/eigenda",
 ]
 resolver = "2"
 
@@ -108,29 +112,29 @@ hokulea-host-bin = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokule
 hokulea-proof = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 hokulea-witgen = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 hokulea-zkvm-verification = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
+canoe-verifier = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 canoe-sp1-cc-host = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 canoe-sp1-cc-verifier = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 canoe-verifier-address-fetcher = { git = "https://github.com/Layr-Labs/hokulea", tag = "hokulea-client/v1.1.2" }
 
-# op-succinct
-op-succinct-prove = { path = "scripts/prove" }
-op-succinct-client-utils = { path = "utils/client" }
-op-succinct-host-utils = { path = "utils/host" }
-op-succinct-build-utils = { path = "utils/build" }
-op-succinct-elfs = { path = "utils/elfs" }
-op-succinct-validity = { path = "validity" }
-op-succinct-fp = { path = "fault-proof" }
-op-succinct-ethereum-client-utils = { path = "utils/ethereum/client" }
-op-succinct-ethereum-host-utils = { path = "utils/ethereum/host" }
-op-succinct-celestia-client-utils = { path = "utils/celestia/client" }
-op-succinct-celestia-host-utils = { path = "utils/celestia/host" }
-op-succinct-eigenda-client-utils = { path = "utils/eigenda/client" }
-op-succinct-eigenda-host-utils = { path = "utils/eigenda/host" }
-op-succinct-proof-utils = { path = "utils/proof" }
-op-succinct-signer-utils = { path = "utils/signer" }
-op-succinct-signer-gcp-utils = { path = "utils/signer-gcp" }
-op-succinct-range-utils = { path = "programs/range/utils" }
-op-succinct-bindings = { path = "bindings" }
+# op-zisk
+op-zisk-client-utils = { path = "utils/client" }
+op-zisk-host-utils = { path = "utils/host" }
+op-zisk-build-utils = { path = "utils/build" }
+op-zisk-elfs = { path = "utils/elfs" }
+op-zisk-validity = { path = "validity" }
+op-zisk-fp = { path = "fault-proof" }
+op-zisk-ethereum-client-utils = { path = "utils/ethereum/client" }
+op-zisk-ethereum-host-utils = { path = "utils/ethereum/host" }
+op-zisk-celestia-client-utils = { path = "utils/celestia/client" }
+op-zisk-celestia-host-utils = { path = "utils/celestia/host" }
+op-zisk-eigenda-client-utils = { path = "utils/eigenda/client" }
+op-zisk-eigenda-host-utils = { path = "utils/eigenda/host" }
+op-zisk-proof-utils = { path = "utils/proof" }
+op-zisk-signer-utils = { path = "utils/signer" }
+op-zisk-signer-gcp-utils = { path = "utils/signer-gcp" }
+op-zisk-range-utils = { path = "programs/range/utils" }
+op-zisk-bindings = { path = "bindings" }
 
 # Alloy (Network)
 alloy-signer-local = { version = "1.1.0" }
@@ -189,16 +193,13 @@ revm = { version = "30.2.0", default-features = false, features = [
 revm-precompile = { version = "28.1.1", default-features = false }
 op-revm = { version = "11.3.0", default-features = false }
 
-# SP1
-sp1-sdk = { version = "=5.2.2", default-features = false, features = ["network"] }
-sp1-lib = { version = "=5.2.2", features = ["verify"] }
-sp1-zkvm = { version = "=5.2.2", features = ["verify"] }
-sp1-build = { version = "=5.2.2" }
-sp1-prover = { version = "=5.2.2" }
-sp1-core-executor = { version = "=5.2.2" }
+# ZisK
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
 
 # kzg
-kzg-rs = { version = "0.2.6", features = ["rkyv", "serde"] }
+kzg-rs = { version = "0.2.7", features = ["rkyv", "serde"] }
 c-kzg = { version = "2.0.0", default-features = false }
 
 # Cloud dependencies
@@ -210,10 +211,9 @@ panic = "abort"
 codegen-units = 1
 lto = "fat"
 
+# ZisK doesn't require these patches
+
 [patch.crates-io]
-tiny-keccak = { git = "https://github.com/sp1-patches/tiny-keccak", tag = "patch-2.0.2-sp1-4.0.0" }
-sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", tag = "patch-sha2-0.10.9-sp1-4.0.0" }
-substrate-bn = { git = "https://github.com/sp1-patches/bn", tag = "patch-0.6.0-sp1-5.0.0" }
-sha3 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha3", tag = "patch-sha3-0.10.8-sp1-4.0.0" }
-p256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-p256-13.2-sp1-5.0.0" }
-k256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-k256-13.4-sp1-5.0.0" }
+# The crates.io `kzg-rs` release is SP1-targeted (depends on `sp1_bls12_381`, which requires SP1 syscalls).
+# For ZisK we vendor the crate and swap to the upstream `bls12_381` backend so it links on the ZisK target.
+kzg-rs = { path = "vendor/kzg-rs" }

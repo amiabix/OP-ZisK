@@ -7,7 +7,7 @@ use kona_host::single::{SingleChainHost, SingleChainHostError};
 use kona_preimage::{BidirectionalChannel, Channel};
 use tokio::task::JoinHandle;
 
-use crate::{fetcher::OPSuccinctDataFetcher, witness_generation::WitnessGenerator};
+use crate::{fetcher::OPZisKDataFetcher, witness_generation::WitnessGenerator};
 
 #[async_trait]
 pub trait PreimageServerStarter {
@@ -118,7 +118,7 @@ pub trait OPSuccinctHost: Send + Sync + 'static {
     /// successfully processed by the host.
     async fn get_finalized_l2_block_number(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         latest_proposed_block_number: u64,
     ) -> Result<Option<u64>>;
 
@@ -135,7 +135,7 @@ pub trait OPSuccinctHost: Send + Sync + 'static {
     ///   unavailable.
     async fn calculate_safe_l1_head(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         l2_end_block: u64,
         safe_db_fallback: bool,
     ) -> Result<B256>;

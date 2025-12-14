@@ -14,16 +14,16 @@ use fault_proof::{
     contract::{DisputeGameFactory, OPSuccinctFaultDisputeGame, ProposalStatus},
     FactoryTrait,
 };
-use op_succinct_client_utils::boot::BootInfoStruct;
-use op_succinct_elfs::AGGREGATION_ELF;
-use op_succinct_host_utils::{
-    fetcher::OPSuccinctDataFetcher,
+use op_zisk_client_utils::boot::BootInfoStruct;
+use op_zisk_elfs::AGGREGATION_ELF;
+use op_zisk_host_utils::{
+    fetcher::OPZisKDataFetcher,
     get_agg_proof_stdin,
     host::OPSuccinctHost,
     network::{determine_network_mode, get_network_signer, parse_fulfillment_strategy},
     witness_generation::WitnessGenerator,
 };
-use op_succinct_proof_utils::{get_range_elf_embedded, initialize_host};
+use op_zisk_proof_utils::{get_range_elf_embedded, initialize_host};
 use sp1_sdk::{utils, Prover, ProverClient, SP1ProofMode};
 use tracing::info;
 
@@ -112,7 +112,7 @@ async fn get_implementation_set_block(
     }
 }
 
-/// Preflight check for the OP Succinct Fault Dispute Game.
+/// Preflight check for the OP-ZisK Fault Dispute Game.
 #[tokio::main]
 async fn main() -> Result<()> {
     // 1. Set up the environment.
@@ -131,7 +131,7 @@ async fn main() -> Result<()> {
         .parse::<bool>()
         .context("USE_KMS_REQUESTER must be true or false")?;
 
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
 
     let factory = DisputeGameFactory::new(
         env::var("FACTORY_ADDRESS")?.parse::<Address>().expect("FACTORY_ADDRESS must be set"),

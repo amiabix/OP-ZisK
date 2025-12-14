@@ -10,7 +10,7 @@ use kona_rpc::{OutputResponse, SafeHeadResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    fetcher::{OPSuccinctDataFetcher, RPCMode},
+    fetcher::{OPZisKDataFetcher, RPCMode},
     host::OPSuccinctHost,
 };
 
@@ -19,7 +19,7 @@ const TWO_HOURS_IN_BLOCKS: u64 = 3600;
 /// Get the start and end block numbers for a range, with validation.
 pub async fn get_validated_block_range<H: OPSuccinctHost>(
     host: &H,
-    data_fetcher: &OPSuccinctDataFetcher,
+    data_fetcher: &OPZisKDataFetcher,
     start: Option<u64>,
     end: Option<u64>,
     default_range: u64,
@@ -73,7 +73,7 @@ pub async fn get_validated_block_range<H: OPSuccinctHost>(
 /// according to its DA-specific logic, making the range safe to use for proof generation.
 pub async fn get_rolling_block_range<H: OPSuccinctHost>(
     host: &H,
-    data_fetcher: &OPSuccinctDataFetcher,
+    data_fetcher: &OPZisKDataFetcher,
     range: u64,
 ) -> Result<(u64, u64)> {
     let header = data_fetcher.get_l2_header(BlockId::finalized()).await?;
@@ -121,7 +121,7 @@ pub async fn split_range_based_on_safe_heads(
     l2_end: u64,
     max_range_size: u64,
 ) -> Result<Vec<SpanBatchRange>> {
-    let data_fetcher = OPSuccinctDataFetcher::default();
+    let data_fetcher = OPZisKDataFetcher::default();
 
     // Get the L1 origin of l2_start
     let l2_start_hex = format!("0x{l2_start:x}");
@@ -143,7 +143,7 @@ pub async fn split_range_based_on_safe_heads(
     let safe_heads = futures::stream::iter(l1_start..=l1_head_number)
         .map(|block| async move {
             let l1_block_hex = format!("0x{block:x}");
-            let data_fetcher = OPSuccinctDataFetcher::default();
+            let data_fetcher = OPZisKDataFetcher::default();
             let result: SafeHeadResponse = data_fetcher
                 .fetch_rpc_data_with_mode(
                     RPCMode::L2Node,

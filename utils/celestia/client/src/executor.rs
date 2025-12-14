@@ -13,7 +13,7 @@ use kona_proof::{
     l2::OracleL2ChainProvider,
     FlushableCache,
 };
-use op_succinct_client_utils::witness::executor::WitnessExecutor;
+use op_zisk_client_utils::witness::executor::WitnessExecutor;
 use spin::RwLock;
 
 pub struct CelestiaDAWitnessExecutor<O, B>

@@ -1,7 +1,10 @@
+use core::future::Future;
+use core::pin::Pin;
+use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 use std::sync::Arc;
 
 use kona_proof::{l1::OracleL1ChainProvider, l2::OracleL2ChainProvider};
-use op_succinct_client_utils::{
+use op_zisk_client_utils::{
     boot::BootInfoStruct,
     witness::{
         executor::{get_inputs_for_pipeline, WitnessExecutor},
@@ -9,6 +12,34 @@ use op_succinct_client_utils::{
     },
     BlobStore,
 };
+
+/// Execute an async future to completion without requiring an async runtime.
+///
+/// This is used inside zkVM programs where `tokio` is not available.
+pub fn block_on<F: Future>(future: F) -> F::Output {
+    fn no_op(_: *const ()) {}
+    fn clone(_: *const ()) -> RawWaker {
+        RawWaker::new(core::ptr::null(), &VTABLE)
+    }
+    static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, no_op, no_op, no_op);
+
+    let raw_waker = RawWaker::new(core::ptr::null(), &VTABLE);
+    // SAFETY: The waker does not use the data pointer.
+    let waker = unsafe { Waker::from_raw(raw_waker) };
+    let mut cx = Context::from_waker(&waker);
+
+    let mut future = core::pin::pin!(future);
+    loop {
+        match Future::poll(Pin::as_mut(&mut future), &mut cx) {
+            Poll::Ready(val) => return val,
+            Poll::Pending => {
+                // In the zkVM environment, the futures we run should not rely on external wakeups.
+                // If we ever hit Pending, spin until completion.
+                continue;
+            }
+        }
+    }
+}
 
 /// Sets up tracing for the range program
 #[cfg(feature = "tracing-subscriber")]
@@ -57,5 +88,16 @@ where
         None => boot_info,
     };
 
-    sp1_zkvm::io::commit(&BootInfoStruct::from(boot_info));
+    // Output boot info using ZisK's set_output
+    // ZisK requires output as u32 chunks
+    let boot_info_struct = BootInfoStruct::from(boot_info);
+    let output_bytes = bincode::serialize(&boot_info_struct)
+        .expect("Failed to serialize boot info");
+    
+    for (i, chunk) in output_bytes.chunks(4).enumerate() {
+        let mut chunk_array = [0u8; 4];
+        chunk_array[..chunk.len()].copy_from_slice(chunk);
+        let val = u32::from_le_bytes(chunk_array);
+        ziskos::set_output(i, val);
+    }
 }

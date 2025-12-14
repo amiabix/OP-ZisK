@@ -51,3 +51,12 @@ configs/
 **/codegen
 # Grafana alloy config
 config.alloy
+
+# zisk-main directory (excluded per user request)
+zisk-main/
+auto-test-when-ready.sh
+check-node-ready.sh
+check-ready.sh
+monitor-and-test.sh
+quick-test.sh
+test-proof-ready.sh

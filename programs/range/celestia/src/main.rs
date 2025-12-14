@@ -7,24 +7,28 @@
 //! the data is supplied by the host binary to the verifiable program.
 
 #![no_main]
-sp1_zkvm::entrypoint!(main);
+ziskos::entrypoint!(main);
 
-use op_succinct_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
-use op_succinct_client_utils::witness::{DefaultWitnessData, WitnessData};
-use op_succinct_range_utils::run_range_program;
+use op_zisk_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
+use op_zisk_client_utils::witness::{DefaultWitnessData, WitnessData};
+use op_zisk_range_utils::{block_on, run_range_program};
 #[cfg(feature = "tracing-subscriber")]
-use op_succinct_range_utils::setup_tracing;
+use op_zisk_range_utils::setup_tracing;
 use rkyv::rancor::Error;
 
 fn main() {
     #[cfg(feature = "tracing-subscriber")]
     setup_tracing();
 
-    kona_proof::block_on(async move {
-        let witness_rkyv_bytes: Vec<u8> = sp1_zkvm::io::read_vec();
-        let witness_data = rkyv::from_bytes::<DefaultWitnessData, Error>(&witness_rkyv_bytes)
-            .expect("Failed to deserialize witness data.");
+    // ZisK reads input as a single byte vector
+    let input: Vec<u8> = ziskos::read_input();
+    
+    // Deserialize witness data
+    let witness_data = rkyv::from_bytes::<DefaultWitnessData, Error>(&input)
+        .expect("Failed to deserialize witness data.");
 
+    // ZisK doesn't provide a Tokio runtime inside the zkVM. Use a minimal executor.
+    block_on(async {
         let (oracle, beacon) = witness_data
             .get_oracle_and_blob_provider()
             .await

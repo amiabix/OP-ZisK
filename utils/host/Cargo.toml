@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-host-utils"
+name = "op-zisk-host-utils"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
@@ -10,12 +10,12 @@ ansi = []
 
 [dependencies]
 
-# sp1
-sp1-sdk.workspace = true
+# zisk
+zisk-common.workspace = true
 
 # local
-op-succinct-client-utils.workspace = true
-op-succinct-elfs.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-elfs.workspace = true
 
 # op-alloy
 op-alloy-consensus.workspace = true
@@ -49,6 +49,7 @@ alloy-sol-types.workspace = true
 # general
 anyhow.workspace = true
 async-trait.workspace = true
+bincode.workspace = true
 cfg-if.workspace = true
 c-kzg.workspace = true
 futures.workspace = true

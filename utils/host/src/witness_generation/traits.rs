@@ -8,12 +8,12 @@ use kona_proof::{
     l2::OracleL2ChainProvider,
     CachingOracle,
 };
-use op_succinct_client_utils::witness::{
+use op_zisk_client_utils::witness::{
     executor::{get_inputs_for_pipeline, WitnessExecutor},
     preimage_store::PreimageStore,
     BlobData, WitnessData,
 };
-use sp1_sdk::SP1Stdin;
+use zisk_common::io::ZiskStdin;
 
 use crate::witness_generation::{OnlineBlobStore, PreimageWitnessCollector};
 
@@ -81,5 +81,5 @@ pub trait WitnessGenerator {
         Ok(witness)
     }
 
-    fn get_sp1_stdin(&self, witness: Self::WitnessData) -> Result<SP1Stdin>;
+    fn get_zisk_stdin(&self, witness: Self::WitnessData) -> Result<ZiskStdin>;
 }

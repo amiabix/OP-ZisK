@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-bindings"
+name = "op-zisk-bindings"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

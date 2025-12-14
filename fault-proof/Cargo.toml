@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-fp"
+name = "op-zisk-fp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -21,15 +21,16 @@ path = "bin/challenger.rs"
 
 [dependencies]
 # local
-op-succinct-client-utils.workspace = true
-op-succinct-elfs.workspace = true
-op-succinct-ethereum-host-utils.workspace = true
-op-succinct-host-utils.workspace = true
-op-succinct-proof-utils.workspace = true
-op-succinct-signer-utils.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-elfs.workspace = true
+op-zisk-ethereum-host-utils.workspace = true
+op-zisk-host-utils.workspace = true
+op-zisk-proof-utils.workspace = true
+op-zisk-signer-utils.workspace = true
 
-# sp1
-sp1-sdk.workspace = true
+# zisk
+zisk-sdk.workspace = true
+zisk-common.workspace = true
 
 # alloy
 alloy-contract.workspace = true
@@ -70,7 +71,7 @@ tikv-jemallocator = "0.6.0"
 alloy-signer-local.workspace = true
 alloy-node-bindings.workspace = true
 alloy.workspace = true
-op-succinct-bindings.workspace = true
+op-zisk-bindings.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 alloy-rpc-types-trace.workspace = true
@@ -79,7 +80,7 @@ which = "4.4"
 
 [features]
 default = ["ethereum"]
-celestia = ["op-succinct-proof-utils/celestia"]
-eigenda = ["op-succinct-proof-utils/eigenda"]
-ethereum = ["op-succinct-proof-utils/ethereum"]
+celestia = ["op-zisk-proof-utils/celestia"]
+eigenda = ["op-zisk-proof-utils/eigenda"]
+ethereum = ["op-zisk-proof-utils/ethereum"]
 integration = []

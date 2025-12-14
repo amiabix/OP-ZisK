@@ -2,14 +2,14 @@ use anyhow::Result;
 use clap::Parser;
 use futures::StreamExt;
 use log::info;
-use op_succinct_host_utils::{
+use op_zisk_host_utils::{
     block_range::{get_validated_block_range, split_range_basic},
-    fetcher::OPSuccinctDataFetcher,
+    fetcher::OPZisKDataFetcher,
     host::OPSuccinctHost,
     witness_generation::WitnessGenerator,
 };
-use op_succinct_proof_utils::{get_range_elf_embedded, initialize_host};
-use op_succinct_scripts::HostExecutorArgs;
+use op_zisk_proof_utils::{get_range_elf_embedded, initialize_host};
+use op_zisk_scripts::HostExecutorArgs;
 use sp1_sdk::utils;
 use std::{
     fs::{self},
@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     dotenv::from_path(&args.env_file).ok();
     utils::setup_logger();
 
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
     let l2_chain_id = data_fetcher.get_l2_chain_id().await?;
 
     let host = initialize_host(Arc::new(data_fetcher.clone()));

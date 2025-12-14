@@ -9,11 +9,11 @@ use fault_proof::{
     challenger::OPSuccinctChallenger, config::ChallengerConfig, contract::DisputeGameFactory,
     prometheus::ChallengerGauge,
 };
-use op_succinct_host_utils::{
+use op_zisk_host_utils::{
     metrics::{init_metrics, MetricsGauge},
     setup_logger,
 };
-use op_succinct_signer_utils::SignerLock;
+use op_zisk_signer_utils::SignerLock;
 use tikv_jemallocator::Jemalloc;
 
 #[global_allocator]

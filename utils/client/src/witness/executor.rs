@@ -110,7 +110,7 @@ pub trait WitnessExecutor {
     ) -> Result<OraclePipeline<Self::O, Self::L1, Self::L2, Self::DA>>;
 
     // Sourced from https://github.com/op-rs/kona/tree/main/bin/client/src/single.rs
-    // Runs the OP Succinct witness executor using the given derivation pipeline,
+    // Runs the OP-ZisK witness executor using the given derivation pipeline,
     async fn run<O, DP, P>(
         &self,
         boot: BootInfo,

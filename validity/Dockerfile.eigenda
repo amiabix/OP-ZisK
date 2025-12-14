@@ -13,10 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /build
 
-# Install SP1
-RUN curl -L https://sp1.succinct.xyz | bash && \
-    ~/.sp1/bin/sp1up && \
-    ~/.sp1/bin/cargo-prove prove --version
+# Install ZisK toolchain
+RUN curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh | bash && \
+    ~/.zisk/bin/ziskup --nokey
 
 # Copy only what's needed for the build
 COPY . .
@@ -47,10 +46,9 @@ RUN apt-get update && apt-get install -y \
     libclang-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install SP1
-RUN curl -L https://sp1.succinct.xyz | bash && \
-    ~/.sp1/bin/sp1up && \
-    ~/.sp1/bin/cargo-prove prove --version
+# Install ZisK toolchain
+RUN curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh | bash && \
+    ~/.zisk/bin/ziskup --nokey
 
 # Copy only the built binaries from builder
 COPY --from=builder /build/validity-proposer /usr/local/bin/validity-proposer

@@ -1,14 +1,14 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use kona_proof::l1::OracleBlobProvider;
-use op_succinct_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
-use op_succinct_client_utils::witness::DefaultWitnessData;
-use op_succinct_host_utils::witness_generation::{
+use op_zisk_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
+use op_zisk_client_utils::witness::DefaultWitnessData;
+use op_zisk_host_utils::witness_generation::{
     online_blob_store::OnlineBlobStore, preimage_witness_collector::PreimageWitnessCollector,
     DefaultOracleBase, WitnessGenerator,
 };
 use rkyv::to_bytes;
-use sp1_sdk::SP1Stdin;
+use zisk_common::io::ZiskStdin;
 
 type WitnessExecutor = CelestiaDAWitnessExecutor<
     PreimageWitnessCollector<DefaultOracleBase>,
@@ -28,10 +28,8 @@ impl WitnessGenerator for CelestiaDAWitnessGenerator {
         &self.executor
     }
 
-    fn get_sp1_stdin(&self, witness: Self::WitnessData) -> Result<SP1Stdin> {
-        let mut stdin = SP1Stdin::new();
+    fn get_zisk_stdin(&self, witness: Self::WitnessData) -> Result<ZiskStdin> {
         let buffer = to_bytes::<rkyv::rancor::Error>(&witness)?;
-        stdin.write_slice(&buffer);
-        Ok(stdin)
+        Ok(ZiskStdin::from_vec(buffer.to_vec()))
     }
 }

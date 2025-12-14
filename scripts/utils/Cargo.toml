@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-scripts"
+name = "op-zisk-scripts"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,12 +8,13 @@ repository.workspace = true
 homepage.workspace = true
 
 [lib]
-name = "op_succinct_scripts"
+name = "op_zisk_scripts"
 path = "src/lib.rs"
 
 [[bin]]
 name = "fetch-and-save-proof"
 path = "bin/fetch_and_save_proof.rs"
+required-features = ["legacy-sp1"]
 
 [[bin]]
 name = "config"
@@ -38,10 +39,11 @@ path = "bin/fetch_fault_dispute_game_config.rs"
 [[bin]]
 name = "gen-sp1-test-artifacts"
 path = "bin/gen_sp1_test_artifacts.rs"
+required-features = ["legacy-sp1"]
 
 [[bin]]
 name = "preflight"
-path = "bin/preflight.rs"
+path = "bin/preflight_zisk.rs"
 
 [dependencies]
 
@@ -70,22 +72,28 @@ futures.workspace = true
 rayon = "1.10.0"
 serde_json.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# ZisK
+zisk-sdk.workspace = true
+zisk-common.workspace = true
 
 # local
-op-succinct-host-utils.workspace = true
-op-succinct-client-utils.workspace = true
-op-succinct-proof-utils.workspace = true
-op-succinct-elfs.workspace = true
-op-succinct-fp.workspace = true
+op-zisk-host-utils.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-proof-utils.workspace = true
+op-zisk-elfs.workspace = true
+op-zisk-fp.workspace = true
 
 # sp1
-sp1-sdk.workspace = true
+# ZisK migration: sp1-sdk removed, use zisk-sdk if needed
 
 [build-dependencies]
-op-succinct-build-utils.workspace = true
+op-zisk-build-utils.workspace = true
 
 [features]
 default = ["ethereum"]
-eigenda = ["op-succinct-proof-utils/eigenda"]
-celestia = ["op-succinct-proof-utils/celestia"]
-ethereum = ["op-succinct-proof-utils/ethereum"]
+eigenda = ["op-zisk-proof-utils/eigenda"]
+celestia = ["op-zisk-proof-utils/celestia"]
+ethereum = ["op-zisk-proof-utils/ethereum"]
+legacy-sp1 = []

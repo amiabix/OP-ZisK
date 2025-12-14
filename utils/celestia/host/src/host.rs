@@ -4,8 +4,8 @@ use alloy_primitives::B256;
 use anyhow::{bail, Result};
 use async_trait::async_trait;
 use hana_host::celestia::{CelestiaCfg, CelestiaChainHost};
-use op_succinct_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
-use op_succinct_host_utils::{fetcher::OPSuccinctDataFetcher, host::OPSuccinctHost};
+use op_zisk_celestia_client_utils::executor::CelestiaDAWitnessExecutor;
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
 
 use crate::{
     blobstream_utils::{get_celestia_safe_head_info, get_highest_finalized_l2_block},
@@ -14,7 +14,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct CelestiaOPSuccinctHost {
-    pub fetcher: Arc<OPSuccinctDataFetcher>,
+    pub fetcher: Arc<OPZisKDataFetcher>,
     pub witness_generator: Arc<CelestiaDAWitnessGenerator>,
 }
 
@@ -63,7 +63,7 @@ impl OPSuccinctHost for CelestiaOPSuccinctHost {
     /// to Ethereum and is verifiable in proofs.
     async fn get_finalized_l2_block_number(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         latest_proposed_block_number: u64,
     ) -> Result<Option<u64>> {
         get_highest_finalized_l2_block(fetcher, latest_proposed_block_number).await
@@ -73,7 +73,7 @@ impl OPSuccinctHost for CelestiaOPSuccinctHost {
     /// Finds the latest L1 block containing batches with Celestia data committed via Blobstream.
     async fn calculate_safe_l1_head(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         l2_end_block: u64,
         _safe_db_fallback: bool,
     ) -> Result<B256> {
@@ -85,7 +85,7 @@ impl OPSuccinctHost for CelestiaOPSuccinctHost {
 }
 
 impl CelestiaOPSuccinctHost {
-    pub fn new(fetcher: Arc<OPSuccinctDataFetcher>) -> Self {
+    pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self {
             fetcher,
             witness_generator: Arc::new(CelestiaDAWitnessGenerator {

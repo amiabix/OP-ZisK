@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
 use log::info;
-use op_succinct_host_utils::fetcher::{BlockInfo, OPSuccinctDataFetcher};
-use sp1_sdk::utils;
+use op_zisk_host_utils::fetcher::{BlockInfo, OPZisKDataFetcher};
+use op_zisk_host_utils::setup_logger;
 use std::{
     fs::{self},
     path::PathBuf,
@@ -78,7 +78,7 @@ impl std::fmt::Display for AggregatedBlockData {
 
 /// Write the block data to a CSV file. Returns the block data.
 async fn write_block_data_to_csv(
-    fetcher: &OPSuccinctDataFetcher,
+    fetcher: &OPZisKDataFetcher,
     args: &BlockDataArgs,
     report_path: PathBuf,
 ) -> Result<Vec<BlockInfo>> {
@@ -114,9 +114,9 @@ async fn main() -> Result<()> {
     let args = BlockDataArgs::parse();
 
     dotenv::from_path(&args.env_file).ok();
-    utils::setup_logger();
+    setup_logger();
 
-    let fetcher = OPSuccinctDataFetcher::default();
+    let fetcher = OPZisKDataFetcher::default();
     let l2_chain_id = fetcher.get_l2_chain_id().await?;
 
     // Confirm that the start and end blocks are valid.

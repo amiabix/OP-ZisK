@@ -1,12 +1,12 @@
 [package]
-name = "op-succinct-eigenda-client-utils"
+name = "op-zisk-eigenda-client-utils"
 version = "0.1.0"
 license.workspace = true
 edition.workspace = true
 
 [dependencies]
 # local
-op-succinct-client-utils.workspace = true
+op-zisk-client-utils.workspace = true
 
 # kona
 kona-derive.workspace = true

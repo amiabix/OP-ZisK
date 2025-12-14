@@ -1,7 +1,32 @@
 use std::process::Command;
+use std::{fs, fmt::Debug, path::Path};
 
 use anyhow::Context;
 use cargo_metadata::MetadataCommand;
+
+fn ensure_codegen_stub<P>(bindings_codegen_path: P) -> anyhow::Result<()>
+where
+    P: AsRef<Path> + Debug,
+{
+    let bindings_codegen_path = bindings_codegen_path.as_ref();
+    let mod_rs_path = bindings_codegen_path.join("mod.rs");
+    if mod_rs_path.exists() {
+        return Ok(());
+    }
+
+    fs::create_dir_all(bindings_codegen_path)
+        .with_context(|| format!("Failed to create bindings codegen dir at {bindings_codegen_path:?}"))?;
+
+    fs::write(
+        &mod_rs_path,
+        "// Auto-generated stub.\n\
+// Contract bindings were not generated (missing dependencies or forge unavailable).\n\
+// Initialize contract dependencies and re-run the build to regenerate bindings.\n",
+    )
+    .with_context(|| format!("Failed to write bindings stub at {mod_rs_path:?}"))?;
+
+    Ok(())
+}
 
 fn main() -> anyhow::Result<()> {
     let metadata =
@@ -14,6 +39,7 @@ fn main() -> anyhow::Result<()> {
     // Check if the contracts directory exists.
     if !contracts_package_path.exists() {
         println!("cargo:warning=Contracts directory not found at {contracts_package_path:?}");
+        ensure_codegen_stub(&bindings_codegen_path)?;
         return Ok(());
     }
 
@@ -24,6 +50,22 @@ fn main() -> anyhow::Result<()> {
     // Check if forge is available
     if Command::new("forge").arg("--version").output().is_err() {
         println!("cargo:warning=Forge not found in PATH. Skipping bindings generation.");
+        ensure_codegen_stub(&bindings_codegen_path)?;
+        return Ok(());
+    }
+
+    // If contract dependencies are not present (e.g. submodules not initialized), skip generation
+    // instead of failing the entire Rust workspace build.
+    let required_path = contracts_package_path.join(
+        "lib/optimism/packages/contracts-bedrock/src/dispute/lib/Types.sol",
+    );
+    if !required_path.exists() {
+        println!(
+            "cargo:warning=Contract dependency missing at {:?}. Skipping bindings generation. \
+Initialize dependencies (e.g. `git submodule update --init --recursive`) and retry if you need bindings.",
+            required_path
+        );
+        ensure_codegen_stub(&bindings_codegen_path)?;
         return Ok(());
     }
 

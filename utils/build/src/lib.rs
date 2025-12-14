@@ -1,28 +1,5 @@
-use sp1_build::{build_program_with_args, BuildArgs};
-
-#[allow(unused)]
-fn build_program(program_name: &str, elf_name: &str, features: Option<Vec<String>>) {
-    let metadata =
-        cargo_metadata::MetadataCommand::new().exec().expect("Failed to get cargo metadata");
-
-    let mut build_args = BuildArgs {
-        elf_name: Some(elf_name.to_string()),
-        output_directory: Some("../../elf".to_string()),
-        docker: true,
-        tag: "v5.2.2".to_string(),
-        workspace_directory: Some("../../".to_string()),
-        ..Default::default()
-    };
-
-    if let Some(features) = features {
-        build_args.features = features;
-    }
-
-    build_program_with_args(
-        &format!("{}/{}", metadata.workspace_root.join("programs"), program_name),
-        build_args,
-    );
-}
+// ZisK build is handled via justfile and cargo-zisk
+// This module is kept for compatibility but build functions are no longer needed
 
 /// Build all the native programs and the native host runner. Optional flag to build the zkVM
 /// programs.

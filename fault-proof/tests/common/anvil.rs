@@ -9,7 +9,7 @@ use alloy_node_bindings::{Anvil, AnvilInstance};
 use alloy_provider::Provider;
 use alloy_rpc_types_eth::BlockNumberOrTag;
 use anyhow::{Context, Result};
-use op_succinct_host_utils::fetcher::{OPSuccinctDataFetcher, RPCMode};
+use op_zisk_host_utils::fetcher::{OPZisKDataFetcher, RPCMode};
 use serde_json::Value;
 use tracing::info;
 
@@ -37,7 +37,7 @@ pub struct AnvilFork {
 /// Returns AnvilFork with provider and endpoint
 pub async fn setup_anvil_chain() -> Result<AnvilFork> {
     info!("Starting fresh Anvil chain");
-    let fetcher = OPSuccinctDataFetcher::new();
+    let fetcher = OPZisKDataFetcher::new();
 
     let l2_finalized = fetcher
         .l2_provider

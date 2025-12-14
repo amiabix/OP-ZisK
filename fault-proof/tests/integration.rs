@@ -1,3 +1,4 @@
+#[cfg(feature = "integration")]
 pub mod common;
 
 #[cfg(feature = "integration")]
@@ -21,7 +22,7 @@ mod integration {
         challenger::Game,
         contract::{GameStatus, ProposalStatus},
     };
-    use op_succinct_bindings::dispute_game_factory::DisputeGameFactory;
+    use op_zisk_bindings::dispute_game_factory::DisputeGameFactory;
     use rand::Rng;
     use tokio::time::{sleep, Duration};
     use tracing::info;
@@ -969,4 +970,10 @@ mod integration {
 
         Ok(())
     }
+}
+
+#[cfg(not(feature = "integration"))]
+#[test]
+fn integration_tests_disabled() {
+    // Integration tests require `--features integration` and contract dependencies / bindings.
 }

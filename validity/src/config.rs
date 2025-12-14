@@ -1,11 +1,10 @@
 use alloy_primitives::{Address, B256};
 use alloy_provider::Provider;
-use op_succinct_host_utils::{
+use op_zisk_host_utils::{
     DisputeGameFactory::DisputeGameFactoryInstance as DisputeGameFactoryContract,
     OPSuccinctL2OutputOracle::OPSuccinctL2OutputOracleInstance as OPSuccinctL2OOContract,
 };
-use sp1_sdk::{network::FulfillmentStrategy, SP1ProofMode, SP1ProvingKey, SP1VerifyingKey};
-use std::sync::Arc;
+use std::path::PathBuf;
 
 pub struct ContractConfig<P>
 where
@@ -26,10 +25,10 @@ pub struct CommitmentConfig {
 
 #[derive(Clone)]
 pub struct ProgramConfig {
-    pub range_vk: Arc<SP1VerifyingKey>,
-    pub range_pk: Arc<SP1ProvingKey>,
-    pub agg_vk: Arc<SP1VerifyingKey>,
-    pub agg_pk: Arc<SP1ProvingKey>,
+    pub range_elf_path: PathBuf,
+    pub agg_elf_path: PathBuf,
+    pub range_proving_key_path: PathBuf,
+    pub agg_proving_key_path: PathBuf,
     pub commitments: CommitmentConfig,
 }
 
@@ -46,10 +45,9 @@ pub struct RequesterConfig {
     pub submission_interval: u64,
     pub max_concurrent_witness_gen: u64,
     pub max_concurrent_proof_requests: u64,
-    pub range_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_mode: SP1ProofMode,
-    pub op_succinct_config_name_hash: B256,
+    // ZisK doesn't use fulfillment strategies or proof modes like SP1
+    // Proof generation is handled directly via SDK
+    pub op_zisk_config_name_hash: B256,
     pub mock: bool,
 
     /// Whether to fallback to timestamp-based L1 head estimation even though SafeDB is not

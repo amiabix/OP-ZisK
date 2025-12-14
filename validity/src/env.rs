@@ -2,10 +2,9 @@ use std::{env, str::FromStr};
 
 use alloy_primitives::Address;
 use anyhow::Result;
-use op_succinct_host_utils::network::parse_fulfillment_strategy;
-use op_succinct_signer_utils::SignerLock;
+use op_zisk_signer_utils::SignerLock;
 use reqwest::Url;
-use sp1_sdk::{network::FulfillmentStrategy, SP1ProofMode};
+// ZisK doesn't use fulfillment strategies or proof modes
 
 #[derive(Debug, Clone)]
 pub struct EnvironmentConfig {
@@ -14,9 +13,7 @@ pub struct EnvironmentConfig {
     pub l1_rpc: Url,
     pub signer: SignerLock,
     pub loop_interval: u64,
-    pub range_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_mode: SP1ProofMode,
+    // ZisK doesn't use these - removed
     pub l2oo_address: Address,
     pub dgf_address: Address,
     pub evm_gas_limit: u64,
@@ -26,7 +23,7 @@ pub struct EnvironmentConfig {
     pub submission_interval: u64,
     pub mock: bool,
     pub safe_db_fallback: bool,
-    pub op_succinct_config_name: String,
+    pub op_zisk_config_name: String,
     pub use_kms_requester: bool,
     pub max_price_per_pgu: u64,
     pub proving_timeout: u64,
@@ -86,23 +83,7 @@ const DEFAULT_LOOP_INTERVAL: u64 = 60;
 pub async fn read_proposer_env() -> Result<EnvironmentConfig> {
     let signer = SignerLock::from_env().await?;
 
-    // Parse strategy values
-    let range_proof_strategy = parse_fulfillment_strategy(get_env_var(
-        "RANGE_PROOF_STRATEGY",
-        Some("reserved".to_string()),
-    )?);
-    let agg_proof_strategy = parse_fulfillment_strategy(get_env_var(
-        "AGG_PROOF_STRATEGY",
-        Some("reserved".to_string()),
-    )?);
-
-    // Parse proof mode
-    let agg_proof_mode =
-        if get_env_var("AGG_PROOF_MODE", Some("plonk".to_string()))?.to_lowercase() == "groth16" {
-            SP1ProofMode::Groth16
-        } else {
-            SP1ProofMode::Plonk
-        };
+    // ZisK doesn't use fulfillment strategies or proof modes
 
     // Optional loop interval
     let loop_interval = get_env_var("LOOP_INTERVAL", Some(DEFAULT_LOOP_INTERVAL))?;
@@ -112,9 +93,7 @@ pub async fn read_proposer_env() -> Result<EnvironmentConfig> {
         l1_rpc: get_env_var("L1_RPC", None)?,
         signer,
         db_url: get_env_var("DATABASE_URL", None)?,
-        range_proof_strategy,
-        agg_proof_strategy,
-        agg_proof_mode,
+        // ZisK doesn't use these
         l2oo_address: get_env_var("L2OO_ADDRESS", Some(Address::ZERO))?,
         dgf_address: get_env_var("DGF_ADDRESS", Some(Address::ZERO))?,
         evm_gas_limit: get_env_var("RANGE_PROOF_EVM_GAS_LIMIT", Some(0))?,
@@ -125,7 +104,7 @@ pub async fn read_proposer_env() -> Result<EnvironmentConfig> {
         mock: get_env_var("OP_SUCCINCT_MOCK", Some(false))?,
         loop_interval,
         safe_db_fallback: get_env_var("SAFE_DB_FALLBACK", Some(false))?,
-        op_succinct_config_name: get_env_var(
+        op_zisk_config_name: get_env_var(
             "OP_SUCCINCT_CONFIG_NAME",
             Some("opsuccinct_genesis".to_string()),
         )?,

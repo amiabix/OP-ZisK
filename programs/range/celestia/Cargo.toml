@@ -7,6 +7,13 @@ authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "range-celestia"
+path = "src/main.rs"
+# This is a zkVM program binary; it expects zkVM-style input and should not run under `cargo test`.
+test = false
+bench = false
+
 [dependencies]
 # general
 rkyv.workspace = true
@@ -14,17 +21,16 @@ rkyv.workspace = true
 # kona
 kona-proof.workspace = true
 
-# sp1
-sp1-zkvm.workspace = true
+# zisk
+ziskos.workspace = true
 
-# op-succinct
-op-succinct-celestia-client-utils.workspace = true
-op-succinct-client-utils.workspace = true
-op-succinct-range-utils.workspace = true
+# op-zisk
+op-zisk-celestia-client-utils.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-range-utils.workspace = true
 
 # `tracing-subscriber` feature dependencies
 tracing-subscriber = { workspace = true, optional = true }
 
 [features]
-embedded = ["sp1-zkvm/embedded"]
 tracing-subscriber = ["dep:tracing-subscriber"]

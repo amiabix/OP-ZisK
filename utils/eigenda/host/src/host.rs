@@ -5,13 +5,13 @@ use alloy_primitives::B256;
 use anyhow::Result;
 use async_trait::async_trait;
 use hokulea_host_bin::cfg::SingleChainHostWithEigenDA;
-use op_succinct_host_utils::{fetcher::OPSuccinctDataFetcher, host::OPSuccinctHost};
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, host::OPSuccinctHost};
 
 use crate::witness_generator::EigenDAWitnessGenerator;
 
 #[derive(Clone)]
 pub struct EigenDAOPSuccinctHost {
-    pub fetcher: Arc<OPSuccinctDataFetcher>,
+    pub fetcher: Arc<OPZisKDataFetcher>,
     pub witness_generator: Arc<EigenDAWitnessGenerator>,
 }
 
@@ -56,7 +56,7 @@ impl OPSuccinctHost for EigenDAOPSuccinctHost {
 
     async fn get_finalized_l2_block_number(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         _: u64,
     ) -> Result<Option<u64>> {
         let finalized_l2_block_number = fetcher.get_l2_header(BlockId::finalized()).await?;
@@ -65,7 +65,7 @@ impl OPSuccinctHost for EigenDAOPSuccinctHost {
 
     async fn calculate_safe_l1_head(
         &self,
-        fetcher: &OPSuccinctDataFetcher,
+        fetcher: &OPZisKDataFetcher,
         l2_end_block: u64,
         safe_db_fallback: bool,
     ) -> Result<B256> {
@@ -84,7 +84,7 @@ impl OPSuccinctHost for EigenDAOPSuccinctHost {
 }
 
 impl EigenDAOPSuccinctHost {
-    pub fn new(fetcher: Arc<OPSuccinctDataFetcher>) -> Self {
+    pub fn new(fetcher: Arc<OPZisKDataFetcher>) -> Self {
         Self { fetcher, witness_generator: Arc::new(EigenDAWitnessGenerator {}) }
     }
 }

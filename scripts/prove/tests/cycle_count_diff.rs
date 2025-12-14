@@ -2,15 +2,15 @@ use std::{fmt::Write as _, fs::File, sync::Arc};
 
 use anyhow::Result;
 use common::post_to_github_pr;
-use op_succinct_host_utils::{
+use op_zisk_host_utils::{
     block_range::get_rolling_block_range,
-    fetcher::OPSuccinctDataFetcher,
+    fetcher::OPZisKDataFetcher,
     host::OPSuccinctHost,
     stats::{ExecutionStats, MarkdownExecutionStats},
     witness_generation::WitnessGenerator,
 };
-use op_succinct_proof_utils::initialize_host;
-use op_succinct_prove::{execute_multi, DEFAULT_RANGE};
+use op_zisk_proof_utils::initialize_host;
+use op_zisk_prove::{execute_multi, DEFAULT_RANGE};
 
 mod common;
 
@@ -126,7 +126,7 @@ async fn test_cycle_count_diff() -> Result<()> {
         .install_default()
         .map_err(|e| anyhow::anyhow!("Failed to install default provider: {:?}", e))?;
 
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
 
     let host = initialize_host(Arc::new(data_fetcher.clone()));
     let (l2_start_block, l2_end_block) = match std::env::var("NEW_BRANCH")

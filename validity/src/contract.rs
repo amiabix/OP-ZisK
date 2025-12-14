@@ -1,11 +1,11 @@
 use alloy_primitives::Address;
 use anyhow::Result;
-use op_succinct_host_utils::{fetcher::OPSuccinctDataFetcher, OPSuccinctL2OutputOracle};
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, OPSuccinctL2OutputOracle};
 
 /// Get the latest proposed block number from the L2 output oracle.
 pub async fn get_latest_proposed_block_number(
     address: Address,
-    fetcher: &OPSuccinctDataFetcher,
+    fetcher: &OPZisKDataFetcher,
 ) -> Result<u64> {
     let l2_output_oracle = OPSuccinctL2OutputOracle::new(address, fetcher.l1_provider.clone());
     let block_number = l2_output_oracle.latestBlockNumber().call().await?;

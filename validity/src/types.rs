@@ -1,13 +1,10 @@
-use std::sync::Arc;
+use std::path::PathBuf;
 
 use alloy_primitives::B256;
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use sp1_sdk::{
-    network::{proto::types::ProofRequest, FulfillmentStrategy},
-    ExecutionReport, NetworkProver, SP1ProofMode, SP1ProvingKey, SP1VerifyingKey,
-};
+use zisk_common::{ExecutorStats, ZiskExecutionResult};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ValidateConfigRequest {
@@ -82,17 +79,13 @@ pub struct ProofStatus {
 /// there are any changes to the contract's configuration.
 #[derive(Clone)]
 pub struct SuccinctProposerConfig {
-    pub range_vk: Arc<SP1VerifyingKey>,
-    pub range_pk: Arc<SP1ProvingKey>,
-    pub agg_pk: Arc<SP1ProvingKey>,
-    pub agg_vk: Arc<SP1VerifyingKey>,
+    pub range_elf_path: PathBuf,
+    pub agg_elf_path: PathBuf,
+    pub range_proving_key_path: PathBuf,
+    pub agg_proving_key_path: PathBuf,
     pub agg_vkey_hash: B256,
     pub range_vkey_commitment: B256,
     pub rollup_config_hash: B256,
-    pub range_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_strategy: FulfillmentStrategy,
-    pub agg_proof_mode: SP1ProofMode,
-    pub network_prover: Arc<NetworkProver>,
 }
 
 /// Deserialize a vector of base64 strings into a vector of vectors of bytes. Go serializes
@@ -126,31 +119,30 @@ pub struct RequestExecutionStatistics {
 }
 
 impl RequestExecutionStatistics {
-    pub fn new(execution_report: ExecutionReport) -> Self {
-        let get_cycles = |key: &str| *execution_report.cycle_tracker.get(key).unwrap_or(&0);
-
+    pub fn new(execution_result: ZiskExecutionResult) -> Self {
+        // ZisK uses different execution statistics structure
+        // For now, map what we can from ZiskExecutionResult
         Self {
-            total_instruction_cycles: execution_report.total_instruction_count(),
-            total_sp1_gas: execution_report.gas.unwrap_or(0),
-            block_execution_cycles: get_cycles("block-execution"),
-            oracle_verify_cycles: get_cycles("oracle-verify"),
-            derivation_cycles: get_cycles("payload-derivation"),
-            blob_verification_cycles: get_cycles("blob-verification"),
-            bn_add_cycles: get_cycles("precompile-bn-add"),
-            bn_mul_cycles: get_cycles("precompile-bn-mul"),
-            bn_pair_cycles: get_cycles("precompile-bn-pair"),
-            kzg_eval_cycles: get_cycles("precompile-kzg-eval"),
-            ec_recover_cycles: get_cycles("precompile-ec-recover"),
-            p256_verify_cycles: get_cycles("precompile-p256-verify"),
+            total_instruction_cycles: execution_result.executed_steps,
+            total_sp1_gas: 0, // ZisK doesn't have gas concept, use 0 for now
+            block_execution_cycles: 0,
+            oracle_verify_cycles: 0,
+            derivation_cycles: 0,
+            blob_verification_cycles: 0,
+            bn_add_cycles: 0,
+            bn_mul_cycles: 0,
+            bn_pair_cycles: 0,
+            kzg_eval_cycles: 0,
+            ec_recover_cycles: 0,
+            p256_verify_cycles: 0,
         }
     }
-}
 
-impl From<&ProofRequest> for RequestExecutionStatistics {
-    fn from(value: &ProofRequest) -> Self {
+    pub fn from_executor_stats(_stats: ExecutorStats) -> Self {
+        // Map from ZisK ExecutorStats if available
         Self {
-            total_instruction_cycles: value.cycles(),
-            total_sp1_gas: value.gas_used(),
+            total_instruction_cycles: 0,
+            total_sp1_gas: 0,
             block_execution_cycles: 0,
             oracle_verify_cycles: 0,
             derivation_cycles: 0,

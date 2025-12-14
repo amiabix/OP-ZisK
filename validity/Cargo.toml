@@ -1,5 +1,5 @@
 [package]
-name = "op-succinct-validity"
+name = "op-zisk-validity"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,6 +10,10 @@ homepage.workspace = true
 [[bin]]
 name = "validity"
 path = "bin/validity.rs"
+
+[[bin]]
+name = "prove-range"
+path = "bin/prove_range.rs"
 
 [dependencies]
 
@@ -22,14 +26,15 @@ tracing.workspace = true
 
 
 # local
-op-succinct-client-utils.workspace = true
-op-succinct-elfs.workspace = true
-op-succinct-host-utils.workspace = true
-op-succinct-proof-utils.workspace = true
-op-succinct-signer-utils.workspace = true
+op-zisk-client-utils.workspace = true
+op-zisk-elfs.workspace = true
+op-zisk-host-utils.workspace = true
+op-zisk-proof-utils.workspace = true
+op-zisk-signer-utils.workspace = true
 
-# sp1
-sp1-sdk.workspace = true
+# zisk
+zisk-sdk.workspace = true
+zisk-common.workspace = true
 
 # alloy
 alloy-eips.workspace = true
@@ -63,10 +68,10 @@ strum = { workspace = true, features = ["derive"] }
 strum_macros.workspace = true
 
 [build-dependencies]
-op-succinct-build-utils.workspace = true
+op-zisk-build-utils.workspace = true
 
 [features]
 default = ["ethereum"]
-celestia = ["op-succinct-proof-utils/celestia"]
-eigenda = ["op-succinct-proof-utils/eigenda"]
-ethereum = ["op-succinct-proof-utils/ethereum"]
+celestia = ["op-zisk-proof-utils/celestia"]
+eigenda = ["op-zisk-proof-utils/eigenda"]
+ethereum = ["op-zisk-proof-utils/ethereum"]

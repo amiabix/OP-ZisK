@@ -2,10 +2,10 @@ use alloy_primitives::{Address, B256};
 use anyhow::Result;
 use cargo_metadata::MetadataCommand;
 use clap::Parser;
-use op_succinct_client_utils::{boot::BootInfoStruct, types::u32_to_u8};
-use op_succinct_elfs::AGGREGATION_ELF;
-use op_succinct_host_utils::{fetcher::OPSuccinctDataFetcher, get_agg_proof_stdin};
-use op_succinct_proof_utils::get_range_elf_embedded;
+use op_zisk_client_utils::{boot::BootInfoStruct, types::u32_to_u8};
+use op_zisk_elfs::AGGREGATION_ELF;
+use op_zisk_host_utils::{fetcher::OPZisKDataFetcher, get_agg_proof_stdin};
+use op_zisk_proof_utils::get_range_elf_embedded;
 use sp1_sdk::{
     utils, HashableKey, Prover, ProverClient, SP1Proof, SP1ProofWithPublicValues, SP1VerifyingKey,
 };
@@ -63,7 +63,7 @@ fn load_aggregation_proof_data(
     (proofs, boot_infos)
 }
 
-// Execute the OP Succinct program for a single block.
+// Execute the OP-ZisK program for a single block.
 #[tokio::main]
 async fn main() -> Result<()> {
     utils::setup_logger();
@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
     dotenv::from_filename(args.env_file).ok();
 
     let prover = ProverClient::from_env();
-    let fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
 
     let (_, vkey) = prover.setup(get_range_elf_embedded());
 

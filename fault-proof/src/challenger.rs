@@ -17,8 +17,8 @@ use crate::{
     prometheus::ChallengerGauge,
     FactoryTrait, L1Provider, L2Provider, L2ProviderTrait,
 };
-use op_succinct_host_utils::metrics::MetricsGauge;
-use op_succinct_signer_utils::SignerLock;
+use op_zisk_host_utils::metrics::MetricsGauge;
+use op_zisk_signer_utils::SignerLock;
 
 pub struct OPSuccinctChallenger<P>
 where
@@ -64,7 +64,7 @@ where
     /// Runs the main challenger loop. On each tick it waits for the configured interval, refreshes
     /// cached state, and then handles challenging, resolution, and bond-claiming tasks.
     pub async fn run(&mut self) -> Result<()> {
-        tracing::info!("OP Succinct Lite Challenger running...");
+        tracing::info!("OP-ZisK Lite Challenger running...");
         if self.config.malicious_challenge_percentage > 0.0 {
             tracing::warn!(
                 "\x1b[33mMalicious challenging enabled: {}% of valid games will be challenged for testing\x1b[0m",

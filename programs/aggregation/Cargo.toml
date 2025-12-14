@@ -7,11 +7,17 @@ authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "aggregation"
+path = "src/main.rs"
+# This is a zkVM program binary; it expects zkVM-style input and should not run under `cargo test`.
+test = false
+bench = false
+
 [dependencies]
 sha2.workspace = true
-sp1-zkvm.workspace = true
-sp1-lib.workspace = true
-op-succinct-client-utils.workspace = true
+ziskos.workspace = true
+op-zisk-client-utils.workspace = true
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true

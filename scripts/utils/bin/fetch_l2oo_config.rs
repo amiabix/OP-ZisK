@@ -1,12 +1,12 @@
 use alloy_eips::BlockId;
 use anyhow::{bail, Result};
-use op_succinct_host_utils::{
-    fetcher::{OPSuccinctDataFetcher, RPCMode},
+use op_zisk_host_utils::{
+    fetcher::{OPZisKDataFetcher, RPCMode},
     host::OPSuccinctHost,
     setup_logger, OP_SUCCINCT_L2_OUTPUT_ORACLE_CONFIG_PATH,
 };
-use op_succinct_proof_utils::initialize_host;
-use op_succinct_scripts::config_common::{
+use op_zisk_proof_utils::initialize_host;
+use op_zisk_scripts::config_common::{
     find_project_root, get_address, get_shared_config_data, write_config_file, TWO_WEEKS_IN_SECONDS,
 };
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ struct L2OOConfig {
     fallback_timeout_secs: u64,
     finalization_period: u64,
     l2_block_time: u64,
-    op_succinct_l2_output_oracle_impl: String,
+    op_zisk_l2_output_oracle_impl: String,
     owner: String,
     proposer: String,
     proxy_admin: String,
@@ -50,7 +50,7 @@ struct L2OOConfig {
 /// - vkey: Get the vkey from the aggregation program ELF.
 /// - owner: Set to the address associated with the private key.
 async fn update_l2oo_config() -> Result<()> {
-    let data_fetcher = OPSuccinctDataFetcher::new_with_rollup_config().await?;
+    let data_fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
     let host = initialize_host(Arc::new(data_fetcher.clone()));
     let shared_config = get_shared_config_data(data_fetcher.clone()).await?;
 
@@ -74,7 +74,7 @@ async fn update_l2oo_config() -> Result<()> {
     let challenger = get_address("CHALLENGER", true);
 
     let proxy_admin = get_address("PROXY_ADMIN", false);
-    let op_succinct_l2_output_oracle_impl = get_address("OP_SUCCINCT_L2_OUTPUT_ORACLE_IMPL", false);
+    let op_zisk_l2_output_oracle_impl = get_address("OP_SUCCINCT_L2_OUTPUT_ORACLE_IMPL", false);
 
     let fallback_timeout_secs = env::var("FALLBACK_TIMEOUT_SECS")
         .map(|p| p.parse().unwrap())
@@ -147,7 +147,7 @@ async fn update_l2oo_config() -> Result<()> {
         aggregation_vkey: shared_config.aggregation_vkey,
         range_vkey_commitment: shared_config.range_vkey_commitment,
         proxy_admin,
-        op_succinct_l2_output_oracle_impl,
+        op_zisk_l2_output_oracle_impl,
     };
 
     write_config_file(&l2oo_config, &OP_SUCCINCT_L2_OUTPUT_ORACLE_CONFIG_PATH, "L2 Output Oracle")?;

@@ -5,7 +5,7 @@ use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
 use anyhow::{anyhow, Context, Result};
 use hana_blobstream::blobstream::{blobstream_address, SP1Blobstream};
-use op_succinct_host_utils::fetcher::OPSuccinctDataFetcher;
+use op_zisk_host_utils::fetcher::OPZisKDataFetcher;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -16,7 +16,7 @@ pub struct CelestiaL1SafeHead {
 
 impl CelestiaL1SafeHead {
     /// Get the L1 block hash for this safe head.
-    pub async fn get_l1_hash(&self, fetcher: &OPSuccinctDataFetcher) -> Result<B256> {
+    pub async fn get_l1_hash(&self, fetcher: &OPZisKDataFetcher) -> Result<B256> {
         Ok(fetcher.get_l1_header(self.l1_block_number.into()).await?.hash_slow())
     }
 }
@@ -98,7 +98,7 @@ const DEFAULT_FILTER_BLOCK_RANGE: u64 = 5000;
 async fn find_minimum_blobstream_block(
     celestia_height: u64,
     start_block: u64,
-    fetcher: &OPSuccinctDataFetcher,
+    fetcher: &OPZisKDataFetcher,
 ) -> Result<u64> {
     let filter_block_range = DEFAULT_FILTER_BLOCK_RANGE;
 
@@ -233,7 +233,7 @@ async fn query_indexer(l2_block: u64) -> Result<Option<DALocationResponse>> {
 
 /// Find the earliest safe L1 block for the given L2 block using the op-celestia-indexer.
 pub async fn get_celestia_safe_head_info(
-    fetcher: &OPSuccinctDataFetcher,
+    fetcher: &OPZisKDataFetcher,
     l2_reference_block: u64,
 ) -> Result<Option<CelestiaL1SafeHead>> {
     // Query the op-celestia-indexer for this L2 block's location.
@@ -298,7 +298,7 @@ pub async fn get_celestia_safe_head_info(
 /// Uses binary search from latest_proposed_block_number down to L2 finalized block, checking
 /// each block with get_celestia_safe_head_info to see if l2 data is available.
 pub async fn get_highest_finalized_l2_block(
-    fetcher: &OPSuccinctDataFetcher,
+    fetcher: &OPZisKDataFetcher,
     latest_proposed_block_number: u64,
 ) -> Result<Option<u64>> {
     // Get the L2 finalized block as our lower bound

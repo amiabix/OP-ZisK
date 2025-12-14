@@ -1,11 +1,9 @@
-use alloy_primitives::{hex, Address};
+use alloy_primitives::Address;
 use alloy_signer_local::PrivateKeySigner;
-use anyhow::Result;
-use op_succinct_client_utils::{boot::hash_rollup_config, types::u32_to_u8};
-use op_succinct_elfs::AGGREGATION_ELF;
-use op_succinct_host_utils::fetcher::OPSuccinctDataFetcher;
-use op_succinct_proof_utils::get_range_elf_embedded;
-use sp1_sdk::{HashableKey, Prover, ProverClient};
+use anyhow::{Context, Result};
+use op_zisk_client_utils::boot::hash_rollup_config;
+use op_zisk_host_utils::fetcher::OPZisKDataFetcher;
+use op_zisk_host_utils::range_vkey_commitment_from_elf;
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -64,7 +62,7 @@ pub fn parse_addresses(env_var: &str) -> Vec<String> {
 
 /// Get shared configuration data that both L2OO and FDG configs need.
 pub async fn get_shared_config_data(
-    data_fetcher: OPSuccinctDataFetcher,
+    data_fetcher: OPZisKDataFetcher,
 ) -> Result<SharedConfigData> {
     // Determine if we're using mock verifier.
     let use_sp1_mock_verifier = env::var("OP_SUCCINCT_MOCK")
@@ -74,21 +72,34 @@ pub async fn get_shared_config_data(
 
     // Set the verifier address.
     let verifier_address = env::var("VERIFIER_ADDRESS").unwrap_or_else(|_| {
-        // Default to Groth16 VerifierGateway contract address.
-        // Source: https://docs.succinct.xyz/docs/sp1/verification/contract-addresses
-        "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B".to_string()
+        // For ZisK, verifier deployment is chain/environment specific.
+        // Default to zero address if not provided.
+        Address::ZERO.to_string()
     });
 
     let rollup_config = data_fetcher.rollup_config.as_ref().unwrap();
     let rollup_config_hash = format!("0x{:x}", hash_rollup_config(rollup_config));
 
-    // Calculate verification keys.
-    let prover = ProverClient::builder().cpu().build();
-    let (_, agg_vkey) = prover.setup(AGGREGATION_ELF);
-    let aggregation_vkey = agg_vkey.vk.bytes32();
+    // ZisK does not expose SP1-style in-process verifying keys for these programs.
+    // Require these values to be provided explicitly (e.g., from a deployment/config process).
+    let aggregation_vkey = env::var("AGGREGATION_VKEY")
+        .or_else(|_| env::var("AGG_VKEY"))
+        .expect("AGGREGATION_VKEY (or AGG_VKEY) must be set for config generation");
+    let range_vkey_commitment = match env::var("RANGE_VKEY_COMMITMENT") {
+        Ok(v) => v,
+        Err(_) => {
+            let range_elf_path = env::var("RANGE_ELF_PATH")
+                .ok()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("target/riscv64ima-zisk-zkvm-elf/release/range"));
 
-    let (_, range_vkey) = prover.setup(get_range_elf_embedded());
-    let range_vkey_commitment = format!("0x{}", hex::encode(u32_to_u8(range_vkey.vk.hash_u32())));
+            let commitment = range_vkey_commitment_from_elf(&range_elf_path)
+                .with_context(|| format!("failed to derive commitment from ELF: {}", range_elf_path.display()))?;
+
+            // Keep it in the same format expected by other tooling/configs.
+            format!("0x{:x}", commitment)
+        }
+    };
 
     Ok(SharedConfigData {
         rollup_config_hash,

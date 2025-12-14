@@ -7,9 +7,8 @@ use std::{
 use alloy_primitives::Address;
 use alloy_transport_http::reqwest::Url;
 use anyhow::{bail, Result};
-use op_succinct_host_utils::network::parse_fulfillment_strategy;
 use serde::{Deserialize, Serialize};
-use sp1_sdk::{network::FulfillmentStrategy, SP1ProofMode};
+// ZisK doesn't use fulfillment strategies or proof modes
 
 #[derive(Debug, Clone)]
 pub struct ProposerConfig {
@@ -28,14 +27,7 @@ pub struct ProposerConfig {
     /// Whether to use fast finality mode.
     pub fast_finality_mode: bool,
 
-    /// Proof fulfillment strategy for range proofs.
-    pub range_proof_strategy: FulfillmentStrategy,
-
-    /// Proof fulfillment strategy for aggregation proofs.
-    pub agg_proof_strategy: FulfillmentStrategy,
-
-    /// Proof mode for aggregation proofs (Groth16 or Plonk).
-    pub agg_proof_mode: SP1ProofMode,
+    // ZisK doesn't use these - removed
 
     /// The interval in blocks between proposing new games.
     pub proposal_interval_in_blocks: u64,
@@ -133,21 +125,7 @@ impl ProposerConfig {
             fast_finality_mode: env::var("FAST_FINALITY_MODE")
                 .unwrap_or("false".to_string())
                 .parse()?,
-            range_proof_strategy: parse_fulfillment_strategy(
-                env::var("RANGE_PROOF_STRATEGY").unwrap_or("reserved".to_string()),
-            ),
-            agg_proof_strategy: parse_fulfillment_strategy(
-                env::var("AGG_PROOF_STRATEGY").unwrap_or("reserved".to_string()),
-            ),
-            agg_proof_mode: if env::var("AGG_PROOF_MODE")
-                .unwrap_or("plonk".to_string())
-                .to_lowercase() ==
-                "groth16"
-            {
-                SP1ProofMode::Groth16
-            } else {
-                SP1ProofMode::Plonk
-            },
+            // ZisK doesn't use these
             proposal_interval_in_blocks: env::var("PROPOSAL_INTERVAL_IN_BLOCKS")
                 .unwrap_or("1800".to_string())
                 .parse()?,
