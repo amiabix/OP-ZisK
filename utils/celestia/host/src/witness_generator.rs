@@ -30,6 +30,13 @@ impl WitnessGenerator for CelestiaDAWitnessGenerator {
 
     fn get_zisk_stdin(&self, witness: Self::WitnessData) -> Result<ZiskStdin> {
         let buffer = to_bytes::<rkyv::rancor::Error>(&witness)?;
-        Ok(ZiskStdin::from_vec(buffer.to_vec()))
+        
+        // ZisK requires input format: [8-byte size header (u64 LE) | data bytes]
+        let size = buffer.len() as u64;
+        let mut stdin_data = Vec::with_capacity(8 + buffer.len());
+        stdin_data.extend_from_slice(&size.to_le_bytes());
+        stdin_data.extend_from_slice(&buffer);
+        
+        Ok(ZiskStdin::from_vec(stdin_data))
     }
 }

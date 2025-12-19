@@ -42,6 +42,8 @@ fn is_historical_state_unavailable_str(s: &str) -> bool {
         || s.contains("header not found")
         || s.contains("state is not available")
         || s.contains("historical state")
+        || s.contains("proof window")
+        || s.contains("distance to target block")
 }
 
 fn is_method_not_found_opaque(err: &anyhow::Error) -> bool {
@@ -115,7 +117,6 @@ where
 #[derive(Clone)]
 /// The OPZisKDataFetcher struct is used to fetch the L2 output data and L2 claim data for a
 /// given block number. It is used to generate the boot info for the native host program.
-/// FIXME: Add retries for all requests (3 retries).
 pub struct OPZisKDataFetcher {
     pub rpc_config: RPCConfig,
     pub l1_provider: Arc<RootProvider>,
@@ -125,18 +126,15 @@ pub struct OPZisKDataFetcher {
     pub l1_config_path: Option<PathBuf>,
 }
 
-impl Default for OPZisKDataFetcher {
-    fn default() -> Self {
-        OPZisKDataFetcher::new()
-    }
-}
+// Removed Default implementation - use new() which returns Result
+// This prevents panics from unwrap() in Default::default()
+// Callers should use OPZisKDataFetcher::new()? instead
 
 #[derive(Debug, Clone)]
 pub struct RPCConfig {
     pub l1_rpc: Url,
     pub l1_beacon_rpc: Option<Url>,
     pub l2_rpc: Url,
-    // TODO(fakedev9999): Make optional if possible.
     pub l2_node_rpc: Url,
 }
 
@@ -155,8 +153,11 @@ pub enum RPCMode {
 /// L1_BEACON_RPC: The L1 beacon RPC URL.
 /// L2_RPC: The L2 RPC URL.
 /// L2_NODE_RPC: The L2 node RPC URL.
-pub fn get_rpcs_from_env() -> RPCConfig {
-    let l1_rpc = env::var("L1_RPC").expect("L1_RPC must be set");
+///
+/// This function now uses proper error handling instead of panicking.
+pub fn get_rpcs_from_env() -> Result<RPCConfig> {
+    let l1_rpc = env::var("L1_RPC")
+        .context("L1_RPC environment variable is required for proof generation")?;
     let maybe_l1_beacon_rpc = env::var("L1_BEACON_RPC").ok();
 
     // L1_BEACON_RPC is optional. If not set or empty, set to None.
@@ -164,17 +165,24 @@ pub fn get_rpcs_from_env() -> RPCConfig {
         .as_deref()
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .map(|s| Url::parse(s).expect("L1_BEACON_RPC must be a valid URL"));
+        .map(|s| Url::parse(s))
+        .transpose()
+        .context("L1_BEACON_RPC must be a valid URL if provided")?;
 
-    let l2_rpc = env::var("L2_RPC").expect("L2_RPC must be set");
-    let l2_node_rpc = env::var("L2_NODE_RPC").expect("L2_NODE_RPC must be set");
+    let l2_rpc = env::var("L2_RPC")
+        .context("L2_RPC environment variable is required for proof generation")?;
+    let l2_node_rpc = env::var("L2_NODE_RPC")
+        .context("L2_NODE_RPC environment variable is required for proof generation")?;
 
-    RPCConfig {
-        l1_rpc: Url::parse(&l1_rpc).expect("L1_RPC must be a valid URL"),
+    Ok(RPCConfig {
+        l1_rpc: Url::parse(&l1_rpc)
+            .with_context(|| format!("L1_RPC must be a valid URL, got: {}", l1_rpc))?,
         l1_beacon_rpc,
-        l2_rpc: Url::parse(&l2_rpc).expect("L2_RPC must be a valid URL"),
-        l2_node_rpc: Url::parse(&l2_node_rpc).expect("L2_NODE_RPC must be a valid URL"),
-    }
+        l2_rpc: Url::parse(&l2_rpc)
+            .with_context(|| format!("L2_RPC must be a valid URL, got: {}", l2_rpc))?,
+        l2_node_rpc: Url::parse(&l2_node_rpc)
+            .with_context(|| format!("L2_NODE_RPC must be a valid URL, got: {}", l2_node_rpc))?,
+    })
 }
 
 /// The info to fetch for a block.
@@ -198,28 +206,45 @@ pub struct FeeData {
 
 impl OPZisKDataFetcher {
     /// Gets the RPC URL's and saves the rollup config for the chain to the rollup config file.
-    pub fn new() -> Self {
-        let rpc_config = get_rpcs_from_env();
+    pub fn new() -> Result<Self> {
+        let rpc_config = get_rpcs_from_env()?;
 
         let l1_provider =
             Arc::new(ProviderBuilder::default().connect_http(rpc_config.l1_rpc.clone()));
         let l2_provider =
             Arc::new(ProviderBuilder::default().connect_http(rpc_config.l2_rpc.clone()));
 
-        OPZisKDataFetcher {
+        Ok(OPZisKDataFetcher {
             rpc_config,
             l1_provider,
             l2_provider,
             rollup_config: None,
             rollup_config_path: None,
             l1_config_path: None,
-        }
+        })
     }
 
     /// Initialize the fetcher with a rollup config.
     pub async fn new_with_rollup_config() -> Result<Self> {
-        let rpc_config = get_rpcs_from_env();
+        let rpc_config = get_rpcs_from_env()?;
+        Self::new_with_rpc_config_internal(rpc_config).await
+    }
 
+    /// Initialize the fetcher with a rollup config using the provided RPCConfig from op_zisk_config.
+    /// This allows using RPCs discovered from DevnetManager API.
+    pub async fn new_with_rpc_config(rpc_config: op_zisk_config::RPCConfig) -> Result<Self> {
+        // Convert from op_zisk_config::RPCConfig to local RPCConfig
+        let local_rpc_config = RPCConfig {
+            l1_rpc: rpc_config.l1_rpc,
+            l1_beacon_rpc: rpc_config.l1_beacon_rpc,
+            l2_rpc: rpc_config.l2_rpc,
+            l2_node_rpc: rpc_config.l2_node_rpc,
+        };
+        Self::new_with_rpc_config_internal(local_rpc_config).await
+    }
+
+    /// Internal helper to create fetcher with rollup config from local RPCConfig
+    async fn new_with_rpc_config_internal(rpc_config: RPCConfig) -> Result<Self> {
         let l1_provider =
             Arc::new(ProviderBuilder::default().connect_http(rpc_config.l1_rpc.clone()));
         let l2_provider =
@@ -432,6 +457,27 @@ impl OPZisKDataFetcher {
         })
         .await;
 
+        // Check if eth_getProof failed due to proof window restrictions
+        let proof_res = match proof_res {
+            Ok(proof) => Ok(proof),
+            Err(e) => {
+                let error_str = format!("{e:#}");
+                // If it's a proof window error, we can't proceed - this is a hard requirement
+                if error_str.contains("proof window") || error_str.contains("distance to target block") {
+                    bail!(
+                        "L2 execution RPC cannot serve eth_getProof for block {l2_block} due to proof window restrictions. \
+                         Public RPCs often limit eth_getProof to recent blocks only. \
+                         To prove this block, you need: \
+                         (1) A self-hosted L2 node with full state, or \
+                         (2) An archive L2 node, or \
+                         (3) Wait for the block to be within the RPC's proof window (if applicable). \
+                         Error: {e:#}"
+                    );
+                }
+                Err(e)
+            }
+        };
+        
         if let Err(e) = proof_res {
             if is_historical_state_unavailable_opaque(&e) {
                 bail!(
@@ -571,29 +617,61 @@ impl OPZisKDataFetcher {
     async fn fetch_and_save_rollup_config(
         rpc_config: &RPCConfig,
     ) -> Result<(RollupConfig, PathBuf)> {
-        let rollup_config: RollupConfig =
-            Self::fetch_rpc_data(&rpc_config.l2_node_rpc, "optimism_rollupConfig", vec![]).await?;
-
         // Create configs directory if it doesn't exist
         let default_dir = PathBuf::from("configs/L2");
         let l2_config_dir = env::var("L2_CONFIG_DIR").map(PathBuf::from).unwrap_or(default_dir);
         fs::create_dir_all(&l2_config_dir)?;
 
-        // Save rollup config to a file named by chain ID
-        let rollup_config_path = l2_config_dir.join(format!("{}.json", rollup_config.l2_chain_id));
+        // Try to fetch from RPC first
+        match Self::fetch_rpc_data::<RollupConfig>(&rpc_config.l2_node_rpc, "optimism_rollupConfig", vec![]).await {
+            Ok(rollup_config) => {
+                // Save rollup config to a file named by chain ID
+                let rollup_config_path = l2_config_dir.join(format!("{}.json", rollup_config.l2_chain_id));
+                let rollup_config_str = serde_json::to_string_pretty(&rollup_config)?;
+                fs::write(&rollup_config_path, rollup_config_str)?;
+                tracing::info!(
+                    "Saved L2 config for chain ID {} to {}",
+                    rollup_config.l2_chain_id,
+                    rollup_config_path.display()
+                );
+                Ok((rollup_config, rollup_config_path))
+            }
+            Err(e) => {
+                // Fallback: Try to load from existing config file
+                // First, try to get the chain ID from L2_RPC
+                let chain_id = match Self::fetch_rpc_data::<U64>(&rpc_config.l2_rpc, "eth_chainId", vec![]).await {
+                    Ok(chain_id_u64) => Some(chain_id_u64.to::<u64>()),
+                    Err(_) => None,
+                };
 
-        // Write the rollup config to the file
-        let rollup_config_str = serde_json::to_string_pretty(&rollup_config)?;
-        fs::write(&rollup_config_path, rollup_config_str)?;
+                // If we couldn't get chain ID from RPC, try common devnet chain IDs
+                let chain_ids_to_try = if let Some(cid) = chain_id {
+                    vec![cid]
+                } else {
+                    vec![901u64, 900u64, 420u64, 10u64] // Common devnet/testnet chain IDs
+                };
 
-        tracing::info!(
-            "Saved L2 config for chain ID {} to {}",
-            rollup_config.l2_chain_id,
-            rollup_config_path.display()
-        );
+                for cid in chain_ids_to_try {
+                    let rollup_config_path = l2_config_dir.join(format!("{}.json", cid));
+                    if rollup_config_path.exists() {
+                        tracing::warn!(
+                            "Failed to fetch rollup config from RPC ({}), loading from existing file: {}",
+                            e,
+                            rollup_config_path.display()
+                        );
+                        let file = fs::File::open(&rollup_config_path)?;
+                        let rollup_config: RollupConfig = serde_json::from_reader(file)?;
+                        return Ok((rollup_config, rollup_config_path));
+                    }
+                }
 
-        // Return both the rollup config and the path to the temporary file
-        Ok((rollup_config, rollup_config_path))
+                Err(anyhow::anyhow!(
+                    "Failed to fetch rollup config from RPC ({}) and no config file found in: {}",
+                    e,
+                    l2_config_dir.display()
+                ))
+            }
+        }
     }
 
     /// Fetch and save the L1 config based on the rollup config's L1 chain ID.
@@ -796,13 +874,34 @@ impl OPZisKDataFetcher {
 
         // Get the l1 origin of the l2 end block.
         let l2_end_block_hex = format!("0x{l2_end_block:x}");
-        let optimism_output_data: OutputResponse = self
+        let optimism_output_data: Result<OutputResponse> = self
             .fetch_rpc_data_with_mode(
                 RPCMode::L2Node,
                 "optimism_outputAtBlock",
                 vec![l2_end_block_hex.into()],
             )
-            .await?;
+            .await;
+
+        // FALLBACK: If optimism_outputAtBlock is not available (e.g., public RPCs),
+        // return an error to trigger the timestamp-based fallback in get_l1_head().
+        let optimism_output_data = match optimism_output_data {
+            Ok(data) => data,
+            Err(e) => {
+                // Check if this is a "method not found", "proof window", or similar error
+                let error_str = format!("{e:#}");
+                if is_method_not_found_str(&error_str) 
+                    || is_historical_state_unavailable_str(&error_str)
+                    || error_str.contains("proof window")
+                    || error_str.contains("distance to target block") {
+                    // Return a specific error that get_l1_head() will catch and use fallback
+                    return Err(anyhow::anyhow!(
+                        "optimism_outputAtBlock not available (RPC method not supported or proof window exceeded). \
+                         This will trigger timestamp-based fallback if SAFE_DB_FALLBACK is enabled."
+                    ));
+                }
+                return Err(e);
+            }
+        };
 
         let l1_origin = optimism_output_data.block_ref.l1_origin;
 
@@ -814,13 +913,32 @@ impl OPZisKDataFetcher {
         while low <= high {
             let mid = low + (high - low) / 2;
             let l1_block_number_hex = format!("0x{mid:x}");
-            let result: SafeHeadResponse = self
+            let result: Result<SafeHeadResponse> = self
                 .fetch_rpc_data_with_mode(
                     RPCMode::L2Node,
                     "optimism_safeHeadAtL1Block",
                     vec![l1_block_number_hex.into()],
                 )
-                .await?;
+                .await;
+            
+            // FALLBACK: If optimism_safeHeadAtL1Block is not available, return error to trigger fallback
+            let result = match result {
+                Ok(data) => data,
+                Err(e) => {
+                    let error_str = format!("{e:#}");
+                    if is_method_not_found_str(&error_str) 
+                        || is_historical_state_unavailable_str(&error_str)
+                        || error_str.contains("proof window")
+                        || error_str.contains("distance to target block") {
+                        return Err(anyhow::anyhow!(
+                            "optimism_safeHeadAtL1Block not available (RPC method not supported or proof window exceeded). \
+                             This will trigger timestamp-based fallback if SAFE_DB_FALLBACK is enabled."
+                        ));
+                    }
+                    return Err(e);
+                }
+            };
+            
             let l2_safe_head = result.safe_head.number;
 
             if l2_safe_head >= l2_end_block {
@@ -956,11 +1074,19 @@ impl OPZisKDataFetcher {
         let l2_provider = self.l2_provider.clone();
 
         // Get L2 output data.
+        // IMPORTANT: The safe head must be BEFORE l2_start_block so derivation can derive
+        // blocks starting from l2_start_block. Use l2_start_block - 1 (or genesis if start is 1).
+        let safe_head_block = if l2_start_block > 1 {
+            l2_start_block - 1
+        } else {
+            0 // Use genesis as safe head if start is block 1
+        };
+        
         let l2_output_block = retry_rpc(|| async {
-            Ok(l2_provider.get_block_by_number(l2_start_block.into()).await?)
+            Ok(l2_provider.get_block_by_number(safe_head_block.into()).await?)
         })
         .await?
-        .ok_or_else(|| anyhow::anyhow!("Block not found for block number {}", l2_start_block))?;
+        .ok_or_else(|| anyhow::anyhow!("Block not found for block number {}", safe_head_block))?;
         let l2_output_state_root = l2_output_block.header.state_root;
         let agreed_l2_head_hash = l2_output_block.header.hash;
         let l2_output_storage_hash = retry_rpc(|| async {
@@ -969,7 +1095,7 @@ impl OPZisKDataFetcher {
                     Address::from_str("0x4200000000000000000000000000000000000016")?,
                     Vec::new(),
                 )
-            .block_id(l2_start_block.into())
+            .block_id(safe_head_block.into())
             .await?
                 .storage_hash)
         })

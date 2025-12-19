@@ -13,9 +13,16 @@ data
 # vscode
 .vscode
 
-# .env files
+# .env files (local secrets only, never committed)
 .env*
 !.env.example
+
+# Explicitly ignore common local env files
+.devnet.env
+.devnet-rpcs.env
+.base-sepolia.env
+.op-sepolia.env
+.op-sepolia-alchemy-pro.env
 
 # txt
 **.txt
@@ -42,6 +49,7 @@ sp1-testing-suite-artifacts/
 # Contracts
 contracts/opsuccinctl2ooconfig.json
 contracts/opsuccinctfdgconfig.json
+archive/contracts/opziskl2ooconfig.json
 **/soljson-latest.js
 
 # Rollup Configs

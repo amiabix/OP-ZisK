@@ -7475,6 +7475,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "op-zisk-config"
+version = "0.1.0"
+dependencies = [
+ "alloy-network",
+ "alloy-primitives",
+ "alloy-provider",
+ "anyhow",
+ "num-traits",
+ "op-alloy-network",
+ "reqwest 0.12.24",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "op-zisk-eigenda-client-utils"
 version = "0.1.0"
 dependencies = [
@@ -7641,6 +7659,7 @@ dependencies = [
  "op-alloy-consensus",
  "op-alloy-network",
  "op-zisk-client-utils",
+ "op-zisk-config",
  "op-zisk-elfs",
  "opentelemetry 0.23.0",
  "opentelemetry-appender-tracing",
@@ -7799,11 +7818,13 @@ dependencies = [
  "futures-util",
  "op-zisk-build-utils",
  "op-zisk-client-utils",
+ "op-zisk-config",
  "op-zisk-elfs",
  "op-zisk-host-utils",
  "op-zisk-proof-utils",
  "op-zisk-signer-utils",
  "reqwest 0.12.24",
+ "rkyv",
  "rustls",
  "serde",
  "serde_json",

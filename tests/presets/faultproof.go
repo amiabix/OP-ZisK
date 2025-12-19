@@ -37,12 +37,12 @@ func FastFinalityFaultProofConfig() FaultProofConfig {
 	return cfg
 }
 
-// WithSuccinctFPProposer creates a fault proof proposer with custom configuration.
-func WithSuccinctFPProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs, cfg FaultProofConfig) stack.CommonOption {
-	return withSuccinctPreset(dest, func(opt *stack.CombinedOption[*sysgo.Orchestrator], ids sysgo.DefaultSingleChainInteropSystemIDs, l2ChainID eth.ChainID) {
+// WithZisKFPProposer creates a fault proof proposer with custom configuration.
+func WithZisKFPProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs, cfg FaultProofConfig) stack.CommonOption {
+	return withZisKPreset(dest, func(opt *stack.CombinedOption[*sysgo.Orchestrator], ids sysgo.DefaultSingleChainInteropSystemIDs, l2ChainID eth.ChainID) {
 		opt.Add(sysgo.WithSuperDeploySP1MockVerifier(ids.L1EL, l2ChainID))
-		opt.Add(sysgo.WithSuperDeployOPSuccinctFaultDisputeGame(ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL, sysgo.WithFdgL2StartingBlockNumber(1)))
-		opt.Add(sysgo.WithSuperSuccinctFaultProofProposer(ids.L2AProposer, ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
+		opt.Add(sysgo.WithSuperDeployOPZisKFaultDisputeGame(ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL, sysgo.WithFdgL2StartingBlockNumber(1)))
+		opt.Add(sysgo.WithSuperZisKFaultProofProposer(ids.L2AProposer, ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
 			sysgo.WithFPProposalIntervalInBlocks(cfg.ProposalIntervalInBlocks),
 			sysgo.WithFPFetchInterval(cfg.FetchInterval),
 			sysgo.WithFPRangeSplitCount(cfg.RangeSplitCount),
@@ -52,19 +52,19 @@ func WithSuccinctFPProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs, cfg 
 	})
 }
 
-// WithDefaultSuccinctFPProposer creates a fault proof proposer with default configuration.
-func WithDefaultSuccinctFPProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
-	return WithSuccinctFPProposer(dest, DefaultFaultProofConfig())
+// WithDefaultZisKFPProposer creates a fault proof proposer with default configuration.
+func WithDefaultZisKFPProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
+	return WithZisKFPProposer(dest, DefaultFaultProofConfig())
 }
 
-// WithSuccinctFPProposerFastFinality creates a fault proof proposer optimized for fast finality.
-func WithSuccinctFPProposerFastFinality(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
-	return WithSuccinctFPProposer(dest, FastFinalityFaultProofConfig())
+// WithZisKFPProposerFastFinality creates a fault proof proposer optimized for fast finality.
+func WithZisKFPProposerFastFinality(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
+	return WithZisKFPProposer(dest, FastFinalityFaultProofConfig())
 }
 
 // NewFaultProofSystem creates a new fault proof test system with custom configuration.
 // This allows per-test configuration instead of relying on TestMain.
 func NewFaultProofSystem(t devtest.T, cfg FaultProofConfig) *presets.MinimalWithProposer {
 	var ids sysgo.DefaultSingleChainInteropSystemIDs
-	return NewSystem(t, WithSuccinctFPProposer(&ids, cfg))
+	return NewSystem(t, WithZisKFPProposer(&ids, cfg))
 }

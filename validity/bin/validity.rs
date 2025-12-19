@@ -1,5 +1,5 @@
 use alloy_provider::{Provider, ProviderBuilder};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use op_zisk_host_utils::{
     fetcher::OPZisKDataFetcher,
     metrics::{init_metrics, MetricsGauge},
@@ -39,7 +39,13 @@ async fn main() -> Result<()> {
 
     setup_logger();
 
-    let fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
+    // Discover RPCs from DevnetManager API or environment variables
+    let rpc_config = op_zisk_config::RPCConfig::discover()
+        .await
+        .context("Failed to discover RPC configuration - check DEVNET_API_URL or L1_RPC/L2_RPC environment variables")?;
+
+    // Create fetcher with discovered RPCs
+    let fetcher = OPZisKDataFetcher::new_with_rpc_config(rpc_config).await?;
 
     // Read the environment variables.
     let env_config = read_proposer_env().await?;

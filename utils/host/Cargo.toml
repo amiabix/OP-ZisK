@@ -15,6 +15,7 @@ zisk-common.workspace = true
 
 # local
 op-zisk-client-utils.workspace = true
+op-zisk-config.workspace = true
 op-zisk-elfs.workspace = true
 
 # op-alloy

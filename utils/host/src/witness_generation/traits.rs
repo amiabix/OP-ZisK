@@ -53,7 +53,8 @@ pub trait WitnessGenerator {
         });
         let beacon = OnlineBlobStore { provider: blob_provider.clone(), store: blob_data.clone() };
 
-        let (boot_info, input) = get_inputs_for_pipeline(oracle.clone()).await.unwrap();
+        let (boot_info, input) = get_inputs_for_pipeline(oracle.clone()).await
+            .map_err(|e| anyhow::anyhow!("Failed to get inputs for pipeline: {:#}", e))?;
         if let Some((cursor, l1_provider, l2_provider)) = input {
             let rollup_config = Arc::new(boot_info.rollup_config.clone());
             let l1_config = Arc::new(boot_info.l1_config.clone());
@@ -69,8 +70,9 @@ pub trait WitnessGenerator {
                     l2_provider.clone(),
                 )
                 .await
-                .unwrap();
-            self.get_executor().run(boot_info, pipeline, cursor, l2_provider).await.unwrap();
+                .map_err(|e| anyhow::anyhow!("Failed to create pipeline: {:#}", e))?;
+            self.get_executor().run(boot_info, pipeline, cursor, l2_provider).await
+                .map_err(|e| anyhow::anyhow!("Failed to run executor: {:#}", e))?;
         }
 
         let witness = Self::WitnessData::from_parts(

@@ -37,7 +37,8 @@ pub struct AnvilFork {
 /// Returns AnvilFork with provider and endpoint
 pub async fn setup_anvil_chain() -> Result<AnvilFork> {
     info!("Starting fresh Anvil chain");
-    let fetcher = OPZisKDataFetcher::new();
+    let fetcher = OPZisKDataFetcher::new()
+        .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables")?;
 
     let l2_finalized = fetcher
         .l2_provider

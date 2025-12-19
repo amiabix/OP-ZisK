@@ -27,6 +27,7 @@ tracing.workspace = true
 
 # local
 op-zisk-client-utils.workspace = true
+op-zisk-config.workspace = true
 op-zisk-elfs.workspace = true
 op-zisk-host-utils.workspace = true
 op-zisk-proof-utils.workspace = true
@@ -47,6 +48,7 @@ dotenv.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 reqwest.workspace = true
+rkyv.workspace = true
 
 # server
 bincode.workspace = true

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use log::info;
 use op_zisk_host_utils::fetcher::{BlockInfo, OPZisKDataFetcher};
@@ -116,7 +116,8 @@ async fn main() -> Result<()> {
     dotenv::from_path(&args.env_file).ok();
     setup_logger();
 
-    let fetcher = OPZisKDataFetcher::default();
+    let fetcher = OPZisKDataFetcher::new()
+        .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables (L1_RPC, L2_RPC, L2_NODE_RPC)")?;
     let l2_chain_id = fetcher.get_l2_chain_id().await?;
 
     // Confirm that the start and end blocks are valid.

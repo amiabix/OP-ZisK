@@ -12,7 +12,7 @@ use alloy_rpc_types_eth::TransactionReceipt;
 use alloy_signer_local::PrivateKeySigner;
 use alloy_sol_types::{SolCall, SolValue};
 use alloy_transport_http::reqwest::Url;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use op_zisk_bindings::{
     anchor_state_registry::AnchorStateRegistry::{self, AnchorStateRegistryInstance},
     dispute_game_factory::DisputeGameFactory::{self, DisputeGameFactoryInstance},
@@ -110,7 +110,8 @@ impl TestEnvironment {
         // Get environment variables
         let mut rpc_config = get_rpcs_from_env();
 
-        let fetcher = OPZisKDataFetcher::new();
+        let fetcher = OPZisKDataFetcher::new()
+            .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables")?;
 
         // Setup fresh Anvil chain
         let anvil = setup_anvil_chain().await?;
@@ -150,7 +151,8 @@ impl TestEnvironment {
         init_logging();
 
         let mut rpc_config = get_rpcs_from_env();
-        let fetcher = OPZisKDataFetcher::new();
+        let fetcher = OPZisKDataFetcher::new()
+            .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables")?;
 
         // Setup anvil chain - gets actual L2 finalized block
         let anvil = setup_anvil_chain().await?;

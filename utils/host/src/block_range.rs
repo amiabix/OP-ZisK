@@ -4,8 +4,8 @@ use std::{
 };
 
 use alloy_eips::BlockId;
-use anyhow::{bail, Result};
-use futures::StreamExt;
+use anyhow::{bail, Context, Result};
+use futures::{StreamExt, TryStreamExt};
 use kona_rpc::{OutputResponse, SafeHeadResponse};
 use serde::{Deserialize, Serialize};
 
@@ -121,7 +121,8 @@ pub async fn split_range_based_on_safe_heads(
     l2_end: u64,
     max_range_size: u64,
 ) -> Result<Vec<SpanBatchRange>> {
-    let data_fetcher = OPZisKDataFetcher::default();
+    let data_fetcher = OPZisKDataFetcher::new()
+        .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables")?;
 
     // Get the L1 origin of l2_start
     let l2_start_hex = format!("0x{l2_start:x}");
@@ -143,7 +144,8 @@ pub async fn split_range_based_on_safe_heads(
     let safe_heads = futures::stream::iter(l1_start..=l1_head_number)
         .map(|block| async move {
             let l1_block_hex = format!("0x{block:x}");
-            let data_fetcher = OPZisKDataFetcher::default();
+            let data_fetcher = OPZisKDataFetcher::new()
+                .context("Failed to initialize OPZisKDataFetcher - check RPC environment variables")?;
             let result: SafeHeadResponse = data_fetcher
                 .fetch_rpc_data_with_mode(
                     RPCMode::L2Node,
@@ -151,12 +153,12 @@ pub async fn split_range_based_on_safe_heads(
                     vec![l1_block_hex.into()],
                 )
                 .await
-                .expect("Failed to fetch safe head");
-            result.safe_head.number
+                .context("Failed to fetch safe head")?;
+            Ok::<u64, anyhow::Error>(result.safe_head.number)
         })
         .buffered(15)
-        .collect::<HashSet<_>>()
-        .await;
+        .try_collect::<HashSet<_>>()
+        .await?;
 
     // Collect and sort the safe heads.
     let mut safe_heads: Vec<_> = safe_heads.into_iter().collect();

@@ -62,19 +62,33 @@ impl OPZisKHost for SingleChainOPZisKHost {
         l2_end_block: u64,
         safe_db_fallback: bool,
     ) -> Result<B256> {
-        // For Ethereum DA, use a simple approach with minimal offset.
-        let (_, l1_head_number) = fetcher.get_l1_head(l2_end_block, safe_db_fallback).await?;
-
-        // FIXME(fakedev9999): Investigate requirement for L1 head offset beyond batch posting block
-        // with safe head > L2 end block.
-        // Add a small buffer for Ethereum DA.
-        let l1_head_number = l1_head_number + 20;
-
-        // Ensure we don't exceed the finalized L1 header.
-        let finalized_l1_header = fetcher.get_l1_header(BlockId::finalized()).await?;
-        let safe_l1_head_number = std::cmp::min(l1_head_number, finalized_l1_header.number);
-
-        Ok(fetcher.get_l1_header(safe_l1_head_number.into()).await?.hash_slow())
+        // Try to get the L1 head using SafeDB first
+        match fetcher.get_l1_head(l2_end_block, false).await {
+            Ok((_, l1_head_number)) => {
+                // SafeDB worked - add small buffer but cap at chain head
+                let chain_head = fetcher.get_l1_header(BlockId::latest()).await?;
+                let l1_head_number_with_buffer = l1_head_number + 20;
+                let safe_l1_head_number = std::cmp::min(l1_head_number_with_buffer, chain_head.number);
+                Ok(fetcher.get_l1_header(safe_l1_head_number.into()).await?.hash_slow())
+            }
+            Err(_) if safe_db_fallback => {
+                // SafeDB not available - use latest chain head for devnet
+                // For devnet, finalized() might be too old (block 0), so use latest() instead
+                // However, we need to use a block that's well behind latest to ensure
+                // all batches are finalized and available for reading, and to account for chain
+                // head changes between reads
+                // Re-check the chain head right before calculating to get the most current value
+                let final_chain_head = fetcher.get_l1_header(BlockId::latest()).await?;
+                // Use a block 15 blocks behind latest to ensure batches are finalized and available
+                // This larger margin accounts for potential race conditions where the chain head
+                // changes between reads, especially in fast-moving devnets
+                let safe_l1_head_number = final_chain_head.number.saturating_sub(15);
+                // Ensure we don't go below block 0
+                let safe_l1_head_number = std::cmp::max(safe_l1_head_number, 0);
+                Ok(fetcher.get_l1_header(safe_l1_head_number.into()).await?.hash_slow())
+            }
+            Err(e) => Err(e),
+        }
     }
 }
 

@@ -4,25 +4,102 @@ OP-ZisK is an experimental fork of `succinctlabs/op-succinct` that explores usin
 
 > **Note**: This is a personal research project and is not affiliated with or endorsed by the ZisK team. This repository builds on the excellent foundation work of the Succinct Labs team and adapts it to explore ZisK-based proving workflows.
 
+## Current Status
+
+**Experimental - Proof of Concept Complete**
+
+This repository has successfully demonstrated end-to-end validity proof generation for OP Stack L2 blocks using ZisK as the zkVM backend. The integration includes:
+
+- **Witness Generation**: Host-side data fetching from L1/L2 RPCs with proper ZisK input format
+- **Proof Generation**: ZisK vadcop proof generation with aggregation support
+- **Devnet Integration**: Full integration with OP Stack devnet for testing
+- **Multi-DA Support**: Ethereum (EIP-4844 blobs), Celestia, and EigenDA witness generation
+
+**What Works:**
+- Witness data generation for L2 block ranges
+- ZisK ROM setup and proof generation workflow
+- Integration with OP Stack devnet via Go test infrastructure
+- Unified RPC configuration system with automatic discovery
+- Proof generation works and tested on m4 Mac although its slow (requires ROM setup, which take ~13 minutes)
+- Tested on local devnet environments
+
+**Limitations:**
+- Contract deployment and on-chain submission not yet implemented
+- No production-ready optimizations
+
 ## Repository Overview
 
 > [!CAUTION]
 > This repository is experimental and may contain unstable code.
-> If you are looking for a production-oriented implementation, refer to `succinctlabs/op-succinct` and its releases.
 
-The repository is organized into the following directories:
+## Quick Start
 
-- `programs`: The programs for proving the execution and derivation of the L2 state transitions and proof aggregation.
-- `validity`: The implementation of the OP-ZisK validity service.
-- `fault-proof`: The implementation of the OP-ZisK fault-proof service.
-- `scripts`: Scripts for testing and deploying OP-ZisK.
-- `utils`: Shared utilities for the host, client, and proposer.
+### Prerequisites
 
-Notes on upstream contract verification and the `contracts/` directory are kept in `archive/UPSTREAM_CONTRACTS.md`.
+- Rust toolchain (latest stable)
+- ZisK CLI tools (`cargo-zisk`, `ziskemu`) installed
+- Go 1.21+ (for devnet testing)
+- Access to L1/L2 RPC endpoints (or use local devnet)
+
+### Generating a Validity Proof
+
+1. **Start a devnet** (or configure RPC endpoints):
+   ```bash
+   cd tests
+   go test -v -timeout=60m -run TestValidityProposer_SingleSubmission ./e2e/validity/proving/
+   ```
+
+2. **Build the range program**:
+   ```bash
+   cargo-zisk build --release --manifest-path programs/range/ethereum/Cargo.toml
+   ```
+
+3. **Perform ROM setup** (one-time, takes 5-60 minutes):
+   ```bash
+   cargo-zisk rom-setup \
+     -e target/riscv64ima-zisk-zkvm-elf/release/range \
+     -k $HOME/.zisk/provingKey
+   ```
+
+4. **Generate witness data**:
+   ```bash
+   cargo run --release --bin prove-range -- \
+     --env-file .devnet.env \
+     --start 2 \
+     --end 3 \
+     --save-input witness.bin \
+     --safe-db-fallback
+   ```
+
+5. **Generate proof**:
+   ```bash
+   cargo-zisk prove \
+     -e target/riscv64ima-zisk-zkvm-elf/release/range \
+     -i witness.bin \
+     -k $HOME/.zisk/provingKey \
+     -o proof \
+     -a -y
+   ```
 
 ## Development
 
 To configure or change the OP-ZisK codebase, refer to the repository source and release notes.
+
+### Configuration
+
+RPC endpoints can be configured via:
+- Environment variables (`.env` files)
+- DevnetManager API (automatic discovery when running Go tests)
+- Command-line arguments
+
+See `utils/config/src/lib.rs` for the unified configuration system.
+
+### Architecture
+
+The system follows a host-guest architecture:
+- **Host**: Rust binaries (`prove-range`, `validity`) that fetch data from RPCs and generate witness files
+- **Guest**: ZisK zkVM programs that execute inside the VM to validate state transitions
+- **Prover**: ZisK CLI tools that generate proofs from ELF + witness data
 
 ## Acknowledgments
 

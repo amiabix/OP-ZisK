@@ -12,7 +12,7 @@ import (
 
 func TestMain(m *testing.M) {
 	presets.DoMain(m,
-		opspresets.WithDefaultSuccinctValidityProposer(&sysgo.DefaultSingleChainInteropSystemIDs{}),
+		opspresets.WithDefaultZisKValidityProposer(&sysgo.DefaultSingleChainInteropSystemIDs{}),
 		presets.WithSafeDBEnabled(),
 	)
 }

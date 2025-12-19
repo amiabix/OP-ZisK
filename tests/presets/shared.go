@@ -21,9 +21,9 @@ const (
 	DefaultL2ID = 901
 )
 
-type succinctConfigurator func(*stack.CombinedOption[*sysgo.Orchestrator], sysgo.DefaultSingleChainInteropSystemIDs, eth.ChainID)
+type ziskConfigurator func(*stack.CombinedOption[*sysgo.Orchestrator], sysgo.DefaultSingleChainInteropSystemIDs, eth.ChainID)
 
-func withSuccinctPreset(dest *sysgo.DefaultSingleChainInteropSystemIDs, configure succinctConfigurator) stack.CommonOption {
+func withZisKPreset(dest *sysgo.DefaultSingleChainInteropSystemIDs, configure ziskConfigurator) stack.CommonOption {
 	l1ChainID := eth.ChainIDFromUInt64(DefaultL1ID)
 	l2ChainID := eth.ChainIDFromUInt64(DefaultL2ID)
 	ids := sysgo.NewDefaultSingleChainInteropSystemIDs(l1ChainID, l2ChainID)
@@ -79,13 +79,14 @@ func withSuccinctPreset(dest *sysgo.DefaultSingleChainInteropSystemIDs, configur
 // NewSystem creates a new test system with the given stack option.
 // This is a unified function for creating both validity and fault proof test systems.
 func NewSystem(t devtest.T, opt stack.CommonOption) *presets.MinimalWithProposer {
-	sys, _ := newSystemWithProposer(t, opt, nil)
+	sys, _, _ := newSystemWithProposer(t, opt, nil)
 	return sys
 }
 
 // newSystemWithProposer creates a new test system and optionally returns the L2Prop backend.
 // If ids is provided, it retrieves the proposer from the orchestrator.
-func newSystemWithProposer(t devtest.T, opt stack.CommonOption, ids *sysgo.DefaultSingleChainInteropSystemIDs) (*presets.MinimalWithProposer, sysgo.L2Prop) {
+// Returns: (system, proposer, orchestrator)
+func newSystemWithProposer(t devtest.T, opt stack.CommonOption, ids *sysgo.DefaultSingleChainInteropSystemIDs) (*presets.MinimalWithProposer, sysgo.L2Prop, *sysgo.Orchestrator) {
 	p := devtest.NewP(t.Ctx(), t.Logger(), func(now bool) {
 		t.Errorf("test failed")
 		if now {
@@ -121,5 +122,5 @@ func newSystemWithProposer(t devtest.T, opt stack.CommonOption, ids *sysgo.Defau
 		t.Require().True(ok, "proposer not found")
 	}
 
-	return sys, prop
+	return sys, prop, orch
 }

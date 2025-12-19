@@ -37,31 +37,32 @@ func (c ValidityConfig) ExpectedRangeCount(outputBlock uint64) int {
 	return int((blocksToProve + c.RangeProofInterval - 1) / c.RangeProofInterval)
 }
 
-// WithSuccinctValidityProposer creates a validity proposer with custom configuration.
-func WithSuccinctValidityProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs, cfg ValidityConfig) stack.CommonOption {
-	return withSuccinctPreset(dest, func(opt *stack.CombinedOption[*sysgo.Orchestrator], ids sysgo.DefaultSingleChainInteropSystemIDs, l2ChainID eth.ChainID) {
+// WithZisKValidityProposer creates a validity proposer with custom configuration.
+func WithZisKValidityProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs, cfg ValidityConfig) stack.CommonOption {
+	return withZisKPreset(dest, func(opt *stack.CombinedOption[*sysgo.Orchestrator], ids sysgo.DefaultSingleChainInteropSystemIDs, l2ChainID eth.ChainID) {
 		opt.Add(sysgo.WithSuperDeploySP1MockVerifier(ids.L1EL, l2ChainID))
-		opt.Add(sysgo.WithSuperDeployOpSuccinctL2OutputOracle(ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
+		opt.Add(sysgo.WithSuperDeployOpZisKL2OutputOracle(ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
 			sysgo.WithL2OOStartingBlockNumber(cfg.StartingBlock),
 			sysgo.WithL2OOSubmissionInterval(cfg.SubmissionInterval),
 			sysgo.WithL2OORangeProofInterval(cfg.RangeProofInterval)))
-		opt.Add(sysgo.WithSuperSuccinctValidityProposer(ids.L2AProposer, ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
+		opt.Add(sysgo.WithSuperZisKValidityProposer(ids.L2AProposer, ids.L1CL, ids.L1EL, ids.L2ACL, ids.L2AEL,
 			sysgo.WithVPSubmissionInterval(cfg.SubmissionInterval),
 			sysgo.WithVPRangeProofInterval(cfg.RangeProofInterval),
 			sysgo.WithVPMockMode(true)))
 	})
 }
 
-// WithDefaultSuccinctValidityProposer creates a validity proposer with default configuration.
+// WithDefaultZisKValidityProposer creates a validity proposer with default configuration.
 // This maintains backward compatibility with existing tests.
-func WithDefaultSuccinctValidityProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
-	return WithSuccinctValidityProposer(dest, DefaultValidityConfig())
+func WithDefaultZisKValidityProposer(dest *sysgo.DefaultSingleChainInteropSystemIDs) stack.CommonOption {
+	return WithZisKValidityProposer(dest, DefaultValidityConfig())
 }
 
 // ValiditySystem wraps MinimalWithProposer and provides access to validity-specific features.
 type ValiditySystem struct {
 	*presets.MinimalWithProposer
 	proposer sysgo.ValidityProposer
+	orch     *sysgo.Orchestrator
 }
 
 // DatabaseURL returns the database URL used by the validity proposer.
@@ -69,10 +70,18 @@ func (s *ValiditySystem) DatabaseURL() string {
 	return s.proposer.DatabaseURL()
 }
 
+// DevnetManager returns the DevnetManager for this system, if available.
+func (s *ValiditySystem) DevnetManager() *sysgo.DevnetManager {
+	if s.orch == nil {
+		return nil
+	}
+	return s.orch.GetDevnetManager()
+}
+
 // NewValiditySystem creates a new validity test system with custom configuration.
 func NewValiditySystem(t devtest.T, cfg ValidityConfig) *ValiditySystem {
 	var ids sysgo.DefaultSingleChainInteropSystemIDs
-	sys, prop := newSystemWithProposer(t, WithSuccinctValidityProposer(&ids, cfg), &ids)
+	sys, prop, orch := newSystemWithProposer(t, WithZisKValidityProposer(&ids, cfg), &ids)
 
 	vp, ok := prop.(sysgo.ValidityProposer)
 	t.Require().True(ok, "proposer must implement ValidityProposer")
@@ -80,5 +89,6 @@ func NewValiditySystem(t devtest.T, cfg ValidityConfig) *ValiditySystem {
 	return &ValiditySystem{
 		MinimalWithProposer: sys,
 		proposer:            vp,
+		orch:                orch,
 	}
 }

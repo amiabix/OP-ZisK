@@ -100,10 +100,9 @@ where
                 PathBuf::from(format!("{}/.zisk/provingKey", home))
             });
 
-        // TODO: Load verification key commitments from proving keys
-        // For now, use placeholders - these should be loaded from the proving key files
-        let range_vkey_commitment = B256::ZERO; // TODO: Load from proving key
-        let agg_vkey_hash = B256::ZERO; // TODO: Load from proving key
+        // Placeholder commitments; these should be loaded from the proving key files when available.
+        let range_vkey_commitment = B256::ZERO;
+        let agg_vkey_hash = B256::ZERO;
 
         // Initialize fetcher
         let rollup_config_hash = hash_rollup_config(fetcher.rollup_config.as_ref().unwrap());

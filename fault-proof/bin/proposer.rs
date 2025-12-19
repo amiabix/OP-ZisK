@@ -3,7 +3,7 @@ use std::{env, sync::Arc};
 use alloy_primitives::Address;
 use alloy_provider::ProviderBuilder;
 use alloy_transport_http::reqwest::Url;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use fault_proof::{
     config::ProposerConfig, contract::DisputeGameFactory, prometheus::ProposerGauge,
@@ -38,8 +38,12 @@ async fn main() -> Result<()> {
 
     let proposer_signer = SignerLock::from_env().await?;
 
-    let l1_provider =
-        ProviderBuilder::new().connect_http(env::var("L1_RPC").unwrap().parse::<Url>().unwrap());
+    // Discover RPCs from DevnetManager API or environment variables
+    let rpc_config = op_zisk_config::RPCConfig::discover()
+        .await
+        .context("Failed to discover RPC configuration - check DEVNET_API_URL or L1_RPC/L2_RPC environment variables")?;
+
+    let l1_provider = ProviderBuilder::new().connect_http(rpc_config.l1_rpc.clone());
 
     let factory = DisputeGameFactory::new(
         env::var("FACTORY_ADDRESS")
@@ -49,7 +53,8 @@ async fn main() -> Result<()> {
         l1_provider.clone(),
     );
 
-    let fetcher = OPZisKDataFetcher::new_with_rollup_config().await?;
+    // Create fetcher with discovered RPCs
+    let fetcher = OPZisKDataFetcher::new_with_rpc_config(rpc_config).await?;
     let host = initialize_host(Arc::new(fetcher.clone()));
 
     let proposer = Arc::new(

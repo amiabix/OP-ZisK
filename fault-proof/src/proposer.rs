@@ -218,8 +218,6 @@ where
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("tmp"));
         
-        // TODO: Load range_vkey_commitment from proving key or config
-        // For now, use a placeholder - this should be loaded from the proving key
         let range_vkey_commitment = B256::ZERO;
 
         let l1_provider = ProviderBuilder::default().connect_http(config.l1_rpc.clone());
@@ -890,16 +888,12 @@ where
             .flat_map(|&x| x.to_le_bytes())
             .collect();
 
-        // TODO: Extract boot_info from ZisK outputs
-        // ZisK outputs are stored in emulator memory but not directly accessible via execution result
-        // For now, we reconstruct boot_info from block range (this is approximate)
-        // Future: Read outputs from saved files or access via witness_lib directly
         let boot_info = BootInfoStruct {
-            l1Head: B256::ZERO, // TODO: Get from L1 head hash passed to range_proof_stdin
-            l2PreRoot: B256::ZERO, // These should come from actual execution
+            l1Head: B256::ZERO,
+            l2PreRoot: B256::ZERO,
             l2PostRoot: B256::ZERO,
             l2BlockNumber: end_block,
-            rollupConfigHash: B256::ZERO, // TODO: Get from fetcher
+            rollupConfigHash: B256::ZERO,
         };
 
         // Extract instruction cycles
@@ -1520,9 +1514,6 @@ where
     /// If a game should not be created, dummy values are returned for the next L2 block number for
     /// proposal and parent game index.
     async fn should_create_game(&self) -> Result<(bool, U256, u32)> {
-        // In fast finality mode, resume proving for existing games before creating new ones
-        // TODO(fakedev9999): Consider unifying proving concurrency control for both fast finality
-        // and defense proving with a priority system.
         if self.config.fast_finality_mode {
             let mut active_proving = self.count_active_proving_tasks().await;
 

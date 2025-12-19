@@ -1,0 +1,19 @@
+[package]
+name = "op-zisk-config"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+alloy-provider = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-network = { workspace = true }
+op-alloy-network = { workspace = true }
+url = "2.5.0"
+num-traits = "0.2"
+

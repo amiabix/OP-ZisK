@@ -44,7 +44,6 @@ pub fn main() {
         assert_eq!(prev_boot_info.rollupConfigHash, boot_info.rollupConfigHash);
     });
 
-    // TODO: ZisK doesn't support proof verification inside zkVM
     // This is a major architectural change - proofs must be verified outside the zkVM
     // For now, we skip verification and rely on external verification
     // In production, this should be handled by verifying proofs before aggregation

@@ -3,6 +3,7 @@ members = [
     "utils/client",
     "utils/host",
     "utils/build",
+    "utils/config",
     "utils/celestia/client",
     "utils/celestia/host",
     "utils/eigenda/client",
@@ -121,6 +122,7 @@ canoe-verifier-address-fetcher = { git = "https://github.com/Layr-Labs/hokulea",
 op-zisk-client-utils = { path = "utils/client" }
 op-zisk-host-utils = { path = "utils/host" }
 op-zisk-build-utils = { path = "utils/build" }
+op-zisk-config = { path = "utils/config" }
 op-zisk-elfs = { path = "utils/elfs" }
 op-zisk-validity = { path = "validity" }
 op-zisk-fp = { path = "fault-proof" }
