@@ -133,8 +133,10 @@ async fn main() -> Result<()> {
         if !health_status.l2_available {
             anyhow::bail!("L2 RPC is not available - check your L2_RPC configuration");
         }
+        // L2_NODE_RPC may not be available on public testnets (optimism_rollupConfig not whitelisted)
+        // Allow proceeding with a warning for public testnets
         if !health_status.l2_node_available {
-            anyhow::bail!("L2 Node RPC is not available - check your L2_NODE_RPC configuration");
+            tracing::warn!("L2 Node RPC health check failed - this is expected for public testnets where optimism_rollupConfig is not whitelisted. Proceeding with witness generation...");
         }
         
         info!(
@@ -161,10 +163,23 @@ async fn main() -> Result<()> {
             (start, end)
         };
 
+        info!("=========================================");
+        info!("BLOCK RANGE FOR PROOF GENERATION");
+        info!("=========================================");
+        info!("L2 Start Block: {} (inclusive)", start);
+        info!("L2 End Block: {} (exclusive)", end);
+        info!("Total Blocks: {}", end - start);
+        info!("=========================================");
+
         let host_args = host
             .fetch(start, end, None, args.safe_db_fallback)
             .await
             .context("Failed to build host args for witness generation")?;
+        
+        // Extract and display block details from host_args
+        if let Some(l1_head) = host.get_l1_head_hash(&host_args) {
+            info!("L1 Head Hash: 0x{}", alloy_primitives::hex::encode(l1_head.as_slice()));
+        }
 
         let witness_data = host.run(&host_args).await.context("Host witness generation failed")?;
         

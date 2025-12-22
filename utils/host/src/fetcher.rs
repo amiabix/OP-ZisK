@@ -1109,6 +1109,15 @@ impl OPZisKDataFetcher {
         };
         let agreed_l2_output_root = keccak256(l2_output_encoded.abi_encode());
 
+        tracing::info!("=========================================");
+        tracing::info!("L2 OUTPUT BLOCK (Start - 1):");
+        tracing::info!("  Block Number: {}", safe_head_block);
+        tracing::info!("  Block Hash: 0x{}", alloy_primitives::hex::encode(agreed_l2_head_hash.as_slice()));
+        tracing::info!("  State Root: 0x{}", alloy_primitives::hex::encode(l2_output_state_root.as_slice()));
+        tracing::info!("  Storage Hash: 0x{}", alloy_primitives::hex::encode(l2_output_storage_hash.as_slice()));
+        tracing::info!("  Output Root: 0x{}", alloy_primitives::hex::encode(agreed_l2_output_root.as_slice()));
+        tracing::info!("=========================================");
+
         // Get L2 claim data.
         let l2_claim_block = retry_rpc(|| async {
             Ok(l2_provider.get_block_by_number(l2_end_block.into()).await?)
@@ -1136,6 +1145,17 @@ impl OPZisKDataFetcher {
             l2_claim_hash: l2_claim_hash.0.into(),
         };
         let claimed_l2_output_root = keccak256(l2_claim_encoded.abi_encode());
+
+        tracing::info!("=========================================");
+        tracing::info!("L2 CLAIM BLOCK (End):");
+        tracing::info!("  Block Number: {}", l2_end_block);
+        tracing::info!("  Block Hash: 0x{}", alloy_primitives::hex::encode(l2_claim_hash.as_slice()));
+        tracing::info!("  State Root: 0x{}", alloy_primitives::hex::encode(l2_claim_state_root.as_slice()));
+        tracing::info!("  Storage Hash: 0x{}", alloy_primitives::hex::encode(l2_claim_storage_hash.as_slice()));
+        tracing::info!("  Output Root: 0x{}", alloy_primitives::hex::encode(claimed_l2_output_root.as_slice()));
+        tracing::info!("=========================================");
+        tracing::info!("L1 Head Hash: 0x{}", alloy_primitives::hex::encode(l1_head_hash.as_slice()));
+        tracing::info!("=========================================");
 
         let l1_beacon_address = self
             .rpc_config

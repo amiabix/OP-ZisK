@@ -70,7 +70,26 @@ pub trait WitnessGenerator {
                     l2_provider.clone(),
                 )
                 .await
-                .map_err(|e| anyhow::anyhow!("Failed to create pipeline: {:#}", e))?;
+                .map_err(|e| {
+                    let error_str = format!("{:#}", e);
+                    // Check if this is the known Alchemy RPC block conversion issue
+                    if error_str.contains("Failed to decode EIP-1559 parameters from header's `extraData` field") {
+                        anyhow::anyhow!(
+                            "Block conversion error: Kona's block decoder failed to parse EIP-1559 parameters from block extraData.\n\
+                             This is a known issue with some RPC providers (e.g., Alchemy) where block format differs slightly.\n\
+                             \n\
+                             Workarounds:\n\
+                             1. Use a self-hosted op-geth node with debug_getRawBlock support\n\
+                             2. Use a different RPC provider that returns blocks in the expected format\n\
+                             3. Use a local devnet for testing\n\
+                             \n\
+                             Original error: {:#}",
+                            e
+                        )
+                    } else {
+                        anyhow::anyhow!("Failed to create pipeline: {:#}", e)
+                    }
+                })?;
             self.get_executor().run(boot_info, pipeline, cursor, l2_provider).await
                 .map_err(|e| anyhow::anyhow!("Failed to run executor: {:#}", e))?;
         }

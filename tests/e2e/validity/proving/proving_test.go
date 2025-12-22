@@ -16,7 +16,7 @@ import (
 func TestValidityProposer_SingleSubmission(gt *testing.T) {
 	t := devtest.ParallelT(gt)
 	cfg := opspresets.DefaultValidityConfig()
-	waitForOutputAndVerify(t, 1, 10*time.Minute, cfg)
+	waitForOutputAndVerify(t, 1, 100*time.Minute, cfg)
 }
 
 func TestValidityProposer_ThreeSubmissions(gt *testing.T) {

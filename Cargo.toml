@@ -196,9 +196,9 @@ revm-precompile = { version = "28.1.1", default-features = false }
 op-revm = { version = "11.3.0", default-features = false }
 
 # ZisK
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.15.0" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.15.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.15.0" }
 
 # kzg
 kzg-rs = { version = "0.2.7", features = ["rkyv", "serde"] }
