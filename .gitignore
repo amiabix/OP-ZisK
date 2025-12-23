@@ -68,3 +68,5 @@ check-ready.sh
 monitor-and-test.sh
 quick-test.sh
 test-proof-ready.sh
+*.bin
+input_*.bin
