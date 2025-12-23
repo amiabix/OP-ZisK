@@ -70,3 +70,5 @@ quick-test.sh
 test-proof-ready.sh
 *.bin
 input_*.bin
+*.bin
+input_*.bin
