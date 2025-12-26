@@ -16,7 +16,7 @@ v0.1 demonstrates testing:
    > [ ZisK proof generation]  (~16s for 50,217,738 steps)
    
 > [!CAUTION]
-> This repository is WIP and an experimental project at this stage and containa few unstable sections of the code.
+> This repository is WIP and an experimental project at this stage and contains a few unstable sections.
 
 ## Quick Start
 
