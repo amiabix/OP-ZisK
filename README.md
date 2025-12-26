@@ -6,31 +6,19 @@ OP-ZisK is an experimental fork of `succinctlabs/op-succinct` that explores usin
 
 ## Current Status
 
-**Experimental - Proof of Concept Complete**
+The system uses a two-phase architecture: 
+> Native execution collects preimages dynamically
+> ZisK proof generation. 
 
-This repository has successfully demonstrated end-to-end validity proof generation for OP Stack L2 blocks using ZisK as the zkVM backend. The integration includes:
-
-- **Witness Generation**: Host-side data fetching from L1/L2 RPCs with proper ZisK input format
-- **Proof Generation**: ZisK vadcop proof generation with aggregation support
-- **Devnet Integration**: Full integration with OP Stack devnet for testing
-- **Multi-DA Support**: Ethereum (EIP-4844 blobs), Celestia, and EigenDA witness generation
-
-**What Works:**
-- Witness data generation for L2 block ranges
-- ZisK ROM setup and proof generation workflow
-- Integration with OP Stack devnet via Go test infrastructure
-- Unified RPC configuration system with automatic discovery
-- Proof generation works and tested on m4 Mac although its slow (requires ROM setup, which take ~13 minutes)
-- Tested on local devnet environments
-
-**Limitations:**
-- Contract deployment and on-chain submission not yet implemented
-- No production-ready optimizations
+v0.1 demonstrates testing: 
+> Devnet setup
+> Witness generation
+> ZisK proof generation (~16s for 50,217,738 steps)
 
 ## Repository Overview
 
 > [!CAUTION]
-> This repository is experimental and may contain unstable code.
+> This repository is experimental and containa few unstable sections of the code.
 
 ## Quick Start
 
