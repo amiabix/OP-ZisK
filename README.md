@@ -7,13 +7,13 @@ OP-ZisK is an experimental fork of `succinctlabs/op-succinct` that explores usin
 ## Current Status
 
 The system uses a two-phase architecture: 
-   > Native execution collects preimages dynamically
-   > ZisK proof generation. 
+   > [ Native execution collects preimages dynamically ] 
+   > [ ZisK proof generation ]  
 
 v0.1 demonstrates testing: 
-   > Devnet setup
-   > Witness generation
-   > ZisK proof generation (~16s for 50,217,738 steps)
+   > [ Devnet setup ]
+   > [ Witness generation ] 
+   > [ ZisK proof generation]  (~16s for 50,217,738 steps)
 
 ## Repository Overview
 
