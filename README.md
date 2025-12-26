@@ -54,7 +54,7 @@ This repository has successfully demonstrated end-to-end validity proof generati
    cargo-zisk build --release --manifest-path programs/range/ethereum/Cargo.toml
    ```
 
-3. **Perform ROM setup** (one-time, takes 5-60 minutes):
+3. **Perform ROM setup** (one-time, takes a few minutes):
    ```bash
    cargo-zisk rom-setup \
      -e target/riscv64ima-zisk-zkvm-elf/release/range \
