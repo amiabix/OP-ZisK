@@ -14,11 +14,9 @@ v0.1 demonstrates testing:
    > [ Devnet setup ]
    > [ Witness generation ] 
    > [ ZisK proof generation]  (~16s for 50,217,738 steps)
-
-## Repository Overview
-
+   
 > [!CAUTION]
-> This repository is experimental and containa few unstable sections of the code.
+> This repository is WIP and an experimental project at this stage and containa few unstable sections of the code.
 
 ## Quick Start
 
